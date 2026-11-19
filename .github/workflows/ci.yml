@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+
+jobs:
+  build:
+    name: Build and check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('global.json', '.config/dotnet-tools.json', 'Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-
+
+      # Restored first so the formatter sees resolved references.
+      - name: Restore
+        run: |
+          dotnet tool restore
+          dotnet restore ShutterRfBridge.slnx
+
+      - name: Check formatting
+        run: |
+          dotnet jb cleanupcode ShutterRfBridge.slnx --verbosity=WARN
+          git diff --exit-code
+
+      - name: Build
+        run: dotnet build ShutterRfBridge.slnx --configuration Release
+
+      # Coverage and its threshold are set in the test project.
+      - name: Test
+        run: dotnet test --solution ShutterRfBridge.slnx --configuration Release --no-build
+
+      - name: Inspect
+        run: |
+          dotnet jb inspectcode ShutterRfBridge.slnx --no-build --properties:Configuration=Release --severity=WARNING --output=inspect.sarif --verbosity=WARN
+          jq -r '.runs[].results[] | "\(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine) \(.ruleId): \(.message.text)"' inspect.sarif
+          jq -e '[.runs[].results[]] | length == 0' inspect.sarif > /dev/null

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Coverage of the production project, enforced on every test run; the threshold only goes up.
+         TODO(#8): stop ignoring exit code 8 (no tests ran) once the first tests exist. -->
+    <TestingPlatformCommandLineArguments>--coverlet --coverlet-include "[ShutterRfBridge]*" --coverlet-threshold 0 --ignore-exit-code 8</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="NSubstitute.Analyzers.CSharp" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShutterRfBridge\ShutterRfBridge.csproj" />
+  </ItemGroup>
+
+</Project>
