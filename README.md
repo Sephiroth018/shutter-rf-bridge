@@ -13,6 +13,15 @@ Requires the .NET SDK version in `global.json`.
 ```powershell
 dotnet tool restore
 dotnet build ShutterRfBridge.slnx
+dotnet test --solution ShutterRfBridge.slnx
+```
+
+Before pushing, format and inspect the code as CI does (`jb cleanupcode` must leave no changes, and
+`jb inspectcode` must report nothing):
+
+```powershell
+dotnet jb cleanupcode ShutterRfBridge.slnx
+dotnet jb inspectcode ShutterRfBridge.slnx --severity=WARNING --output=inspect.sarif
 ```
 
 ## AI disclaimer

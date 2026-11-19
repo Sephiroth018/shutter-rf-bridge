@@ -1,2 +1,4 @@
 <Solution>
+  <Project Path="ShutterRfBridge.Tests/ShutterRfBridge.Tests.csproj" />
+  <Project Path="ShutterRfBridge/ShutterRfBridge.csproj" />
 </Solution>

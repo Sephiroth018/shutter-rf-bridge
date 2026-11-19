@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# ReSharper inspection report (jb inspectcode)
+inspect.sarif
