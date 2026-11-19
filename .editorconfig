@@ -129,3 +129,7 @@ dotnet_diagnostic.CA1852.severity = warning
 # Unused parameters and values.
 dotnet_diagnostic.IDE0060.severity = warning
 dotnet_diagnostic.IDE0059.severity = warning
+
+[*Tests/**.cs]
+# Test names are MethodName_Scenario_ExpectedResult.
+dotnet_diagnostic.CA1707.severity = none
