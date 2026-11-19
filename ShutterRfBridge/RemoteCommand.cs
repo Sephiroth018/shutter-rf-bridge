@@ -1,7 +1,8 @@
 namespace ShutterRfBridge;
 
 /// <summary>The command codes the remote sends as a frame's last byte.</summary>
-internal enum RemoteCommand : byte
+/// <remarks>Public so that xUnit's public test methods can take it as a theory parameter.</remarks>
+public enum RemoteCommand : byte
 {
     Up = 0x11,
     Down = 0x33,

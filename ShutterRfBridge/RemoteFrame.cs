@@ -36,7 +36,7 @@ internal sealed record RemoteFrame
     ///     The frame's <see cref="BitCount" /> bits in sending order, MSB first: remote ID, channel, command.
     /// </summary>
     public ulong Bits =>
-        ((ulong) RemoteId << (ChannelBitCount + CommandBitCount)) |
-        ((ulong) Channel << CommandBitCount) |
-        (byte) Command;
+        ((ulong)RemoteId << (ChannelBitCount + CommandBitCount)) |
+        ((ulong)Channel << CommandBitCount) |
+        (byte)Command;
 }

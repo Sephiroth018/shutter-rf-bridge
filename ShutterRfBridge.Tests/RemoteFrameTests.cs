@@ -21,7 +21,7 @@ public sealed class RemoteFrameTests
     [Fact]
     public void Constructor_UndefinedCommand_ThrowsArgumentOutOfRange()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new RemoteFrame(MadeUpRemote.Id, 3, (RemoteCommand) 0x99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new RemoteFrame(MadeUpRemote.Id, 3, (RemoteCommand)0x99));
     }
 
     [Theory]
@@ -34,14 +34,13 @@ public sealed class RemoteFrameTests
         Assert.Equal(expectedBits, frame.Bits);
     }
 
-    // Test methods are public, so they take the internal RemoteCommand as its code.
     [Theory]
-    [InlineData((byte) RemoteCommand.Up, 0xA5_C3E7_1311UL)]
-    [InlineData((byte) RemoteCommand.Down, 0xA5_C3E7_1333UL)]
-    [InlineData((byte) RemoteCommand.Stop, 0xA5_C3E7_1355UL)]
-    public void Bits_MadeUpRemoteOnChannel3_ComposesIdChannelAndCommand(byte commandCode, ulong expectedBits)
+    [InlineData(RemoteCommand.Up, 0xA5_C3E7_1311UL)]
+    [InlineData(RemoteCommand.Down, 0xA5_C3E7_1333UL)]
+    [InlineData(RemoteCommand.Stop, 0xA5_C3E7_1355UL)]
+    public void Bits_MadeUpRemoteOnChannel3_ComposesIdChannelAndCommand(RemoteCommand command, ulong expectedBits)
     {
-        var frame = new RemoteFrame(MadeUpRemote.Id, 3, (RemoteCommand) commandCode);
+        var frame = new RemoteFrame(MadeUpRemote.Id, 3, command);
 
         Assert.Equal(expectedBits, frame.Bits);
     }

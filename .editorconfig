@@ -24,6 +24,8 @@ dotnet_diagnostic.IDE0130.severity = warning
 csharp_using_directive_placement = outside_namespace:warning
 dotnet_sort_system_directives_first = true
 csharp_new_line_before_open_brace = all
+# Pinned so a developer's own ReSharper settings can't make jb cleanupcode format differently from CI.
+csharp_space_after_cast = false
 
 # Braces always, also around single statements
 csharp_prefer_braces = true:warning

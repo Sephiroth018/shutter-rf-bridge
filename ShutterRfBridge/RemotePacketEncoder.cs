@@ -34,9 +34,8 @@ internal static class RemotePacketEncoder
         for (var bitIndex = 0; bitIndex < RemoteFrame.BitCount; bitIndex++)
         {
             var isOne = ((bits >> (RemoteFrame.BitCount - 1 - bitIndex)) & 1) == 1;
-            SetHigh(packet,
-                    SyncHighUnits + SyncLowUnits + bitIndex * BitUnits,
-                    isOne ? LongPulseUnits : ShortPulseUnits);
+            var start = SyncHighUnits + SyncLowUnits + bitIndex * BitUnits;
+            SetHigh(packet, start, isOne ? LongPulseUnits : ShortPulseUnits);
         }
 
         return packet;
@@ -46,7 +45,7 @@ internal static class RemotePacketEncoder
     {
         for (var position = start; position < start + units; position++)
         {
-            packet[position / 8] |= (byte) (0x80 >> (position % 8));
+            packet[position / 8] |= (byte)(0x80 >> (position % 8));
         }
     }
 }
