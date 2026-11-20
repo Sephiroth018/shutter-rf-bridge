@@ -6,9 +6,8 @@ internal sealed record RemoteFrame
     private const int RemoteIdBitCount = 28;
     private const int ChannelBitCount = 4;
     private const int CommandBitCount = 8;
-    private const uint MaxRemoteId = (1u << RemoteIdBitCount) - 1;
-    private const int MaxChannel = (1 << ChannelBitCount) - 1;
-
+    public const uint MaxRemoteId = (1u << RemoteIdBitCount) - 1;
+    public const int MaxChannel = (1 << ChannelBitCount) - 1;
     public const int BitCount = RemoteIdBitCount + ChannelBitCount + CommandBitCount;
 
     public RemoteFrame(uint remoteId, int channel, RemoteCommand command)

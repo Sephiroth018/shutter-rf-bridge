@@ -6,6 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="NLog.Web.AspNetCore" />
     <PackageReference Include="System.Device.Gpio" />
   </ItemGroup>
 
