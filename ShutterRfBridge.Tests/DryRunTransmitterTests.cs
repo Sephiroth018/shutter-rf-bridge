@@ -9,12 +9,9 @@ public sealed class DryRunTransmitterTests
     [Fact]
     public void Transmit_AnyFrame_LogsTheCommandAndChannelAtInformation()
     {
-        // ILogger<DryRunTransmitter> can't be substituted for an internal type, so the real Logger<T> wraps a substitute.
-        var logger = Substitute.For<ILogger>();
+        var logger = Substitute.For<ILogger<DryRunTransmitter>>();
         logger.IsEnabled(LogLevel.Information).Returns(true);
-        var loggerFactory = Substitute.For<ILoggerFactory>();
-        loggerFactory.CreateLogger(Arg.Any<string>()).Returns(logger);
-        var transmitter = new DryRunTransmitter(new Logger<DryRunTransmitter>(loggerFactory));
+        var transmitter = new DryRunTransmitter(logger);
 
         transmitter.Transmit(new RemoteFrame(MadeUpRemote.Id, 3, RemoteCommand.Down));
 
