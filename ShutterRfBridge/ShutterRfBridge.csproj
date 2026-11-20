@@ -4,4 +4,8 @@
     <InternalsVisibleTo Include="ShutterRfBridge.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Device.Gpio" />
+  </ItemGroup>
+
 </Project>
