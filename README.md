@@ -17,11 +17,11 @@ dotnet test --solution ShutterRfBridge.slnx
 ```
 
 Before pushing, format and inspect the code as CI does (`jb cleanupcode` must leave no changes, and
-`jb inspectcode` must report nothing):
+`jb inspectcode` must report nothing). Both skip your personal ReSharper settings, as CI's runs do:
 
 ```powershell
-dotnet jb cleanupcode ShutterRfBridge.slnx
-dotnet jb inspectcode ShutterRfBridge.slnx --severity=WARNING --output=inspect.sarif
+dotnet jb cleanupcode ShutterRfBridge.slnx --disable-settings-layers="GlobalAll;GlobalPerProduct;SolutionPersonal;ProjectPersonal"
+dotnet jb inspectcode ShutterRfBridge.slnx --disable-settings-layers="GlobalAll;GlobalPerProduct;SolutionPersonal;ProjectPersonal" --severity=WARNING --output=inspect.sarif
 ```
 
 ## AI disclaimer
