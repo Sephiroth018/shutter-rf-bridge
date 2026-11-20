@@ -36,7 +36,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          dotnet jb cleanupcode ShutterRfBridge.slnx --verbosity=WARN
+          dotnet jb cleanupcode ShutterRfBridge.slnx --disable-settings-layers="GlobalAll;GlobalPerProduct;SolutionPersonal;ProjectPersonal" --verbosity=WARN
           git diff --exit-code
 
       - name: Build
@@ -48,6 +48,6 @@ jobs:
 
       - name: Inspect
         run: |
-          dotnet jb inspectcode ShutterRfBridge.slnx --no-build --properties:Configuration=Release --severity=WARNING --output=inspect.sarif --verbosity=WARN
+          dotnet jb inspectcode ShutterRfBridge.slnx --no-build --properties:Configuration=Release --disable-settings-layers="GlobalAll;GlobalPerProduct;SolutionPersonal;ProjectPersonal" --severity=WARNING --output=inspect.sarif --verbosity=WARN
           jq -r '.runs[].results[] | "\(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine) \(.ruleId): \(.message.text)"' inspect.sarif
           jq -e '[.runs[].results[]] | length == 0' inspect.sarif > /dev/null
