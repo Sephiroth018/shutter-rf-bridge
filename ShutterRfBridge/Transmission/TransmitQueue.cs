@@ -1,4 +1,6 @@
-namespace ShutterRfBridge;
+using ShutterRfBridge.Remote;
+
+namespace ShutterRfBridge.Transmission;
 
 /// <summary>
 ///     The commands waiting to be sent, and the channels that are moving. Stops, and moves for a moving channel, go

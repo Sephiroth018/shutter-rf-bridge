@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Options;
+using ShutterRfBridge.Configuration;
+using ShutterRfBridge.Radio;
+using ShutterRfBridge.Remote;
 
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Transmission;
 
 /// <summary>Sends the <see cref="TransmitQueue" />'s commands one at a time.</summary>
 internal sealed partial class TransmitWorker : BackgroundService

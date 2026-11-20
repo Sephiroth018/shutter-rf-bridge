@@ -1,7 +1,8 @@
 using System.Net;
 using Microsoft.Extensions.Options;
+using ShutterRfBridge.Configuration;
 
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Api;
 
 /// <summary>Answers <c>403 Forbidden</c> to every client not in <see cref="BridgeOptions.AllowedClients" />.</summary>
 internal sealed partial class ClientAllowListMiddleware

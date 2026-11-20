@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using ShutterRfBridge.Remote;
+using ShutterRfBridge.Transmission;
 
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Api;
 
 /// <summary>
 ///     The endpoints the CCU calls, one shutter channel per route. Each queues its command and answers

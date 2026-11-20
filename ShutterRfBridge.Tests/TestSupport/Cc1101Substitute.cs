@@ -1,5 +1,6 @@
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using ShutterRfBridge.Radio;
 
 namespace ShutterRfBridge.Tests.TestSupport;
 

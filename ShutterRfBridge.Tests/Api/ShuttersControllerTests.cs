@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http;
+using ShutterRfBridge.Remote;
 using ShutterRfBridge.Tests.TestSupport;
+using ShutterRfBridge.Transmission;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Api;
 
 public sealed class ShuttersControllerTests : IAsyncDisposable
 {

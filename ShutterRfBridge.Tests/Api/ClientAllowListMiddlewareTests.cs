@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Http;
 using ShutterRfBridge.Tests.TestSupport;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Api;
 
 public sealed class ClientAllowListMiddlewareTests : IAsyncDisposable
 {

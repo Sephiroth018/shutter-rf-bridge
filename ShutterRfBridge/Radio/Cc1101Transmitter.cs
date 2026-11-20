@@ -1,4 +1,6 @@
-namespace ShutterRfBridge;
+using ShutterRfBridge.Remote;
+
+namespace ShutterRfBridge.Radio;
 
 /// <summary>
 ///     Transmits commands through a CC1101 in packet mode, one <see cref="RemotePacketEncoder" /> packet per frame.

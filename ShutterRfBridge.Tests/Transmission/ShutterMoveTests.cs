@@ -1,4 +1,7 @@
-namespace ShutterRfBridge.Tests;
+using ShutterRfBridge.Remote;
+using ShutterRfBridge.Transmission;
+
+namespace ShutterRfBridge.Tests.Transmission;
 
 public sealed class ShutterMoveTests
 {

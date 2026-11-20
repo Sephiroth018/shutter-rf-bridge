@@ -1,7 +1,8 @@
 using System.Net;
 using Microsoft.Extensions.Options;
+using ShutterRfBridge.Remote;
 
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Configuration;
 
 /// <summary>The house-specific settings, from the <see cref="SectionName" /> configuration section.</summary>
 internal sealed class BridgeOptions

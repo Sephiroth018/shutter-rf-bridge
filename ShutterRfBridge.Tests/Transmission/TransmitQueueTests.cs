@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using ShutterRfBridge.Remote;
 using ShutterRfBridge.Tests.TestSupport;
+using ShutterRfBridge.Transmission;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Transmission;
 
 public sealed class TransmitQueueTests : IDisposable
 {

@@ -1,7 +1,9 @@
+using ShutterRfBridge.Radio;
+using ShutterRfBridge.Remote;
 using ShutterRfBridge.Tests.TestSupport;
 using static ShutterRfBridge.Tests.TestSupport.Cc1101Substitute;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Radio;
 
 public sealed class Cc1101TransmitterTests
 {

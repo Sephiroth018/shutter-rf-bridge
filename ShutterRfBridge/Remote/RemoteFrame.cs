@@ -1,4 +1,4 @@
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Remote;
 
 /// <summary>One frame the remote sends: its ID, the shutter channel and the command.</summary>
 internal sealed record RemoteFrame

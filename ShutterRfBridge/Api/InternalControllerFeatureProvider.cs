@@ -2,7 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Api;
 
 /// <summary>
 ///     Also finds this assembly's internal API controllers, so they and the types they use can stay internal; the

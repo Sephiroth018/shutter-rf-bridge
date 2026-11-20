@@ -1,4 +1,6 @@
-namespace ShutterRfBridge;
+using ShutterRfBridge.Remote;
+
+namespace ShutterRfBridge.Radio;
 
 /// <summary>Sends a remote's command to the shutters.</summary>
 internal interface IRemoteTransmitter

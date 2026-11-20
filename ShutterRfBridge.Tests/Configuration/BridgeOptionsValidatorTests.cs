@@ -1,6 +1,7 @@
+using ShutterRfBridge.Configuration;
 using ShutterRfBridge.Tests.TestSupport;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Configuration;
 
 public sealed class BridgeOptionsValidatorTests
 {

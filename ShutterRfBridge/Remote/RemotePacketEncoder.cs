@@ -1,4 +1,4 @@
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Remote;
 
 /// <summary>
 ///     Encodes a <see cref="RemoteFrame" /> as one fixed-length CC1101 packet. Each packet bit is one time unit of
