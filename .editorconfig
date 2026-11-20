@@ -24,8 +24,27 @@ dotnet_diagnostic.IDE0130.severity = warning
 csharp_using_directive_placement = outside_namespace:warning
 dotnet_sort_system_directives_first = true
 csharp_new_line_before_open_brace = all
-# Pinned so a developer's own ReSharper settings can't make jb cleanupcode format differently from CI.
+# ReSharper formatting, pinned so a developer's own global ReSharper settings can't make jb cleanupcode or
+# cleanup on save format differently from CI. The values are ReSharper's defaults.
 csharp_space_after_cast = false
+resharper_csharp_align_first_arg_by_paren = false
+resharper_csharp_align_linq_query = false
+resharper_csharp_align_multiline_calls_chain = false
+resharper_csharp_instance_members_qualify_declared_in = this_class, base_class
+resharper_csharp_keep_blank_lines_in_declarations = 2
+resharper_csharp_keep_existing_initializer_arrangement = true
+resharper_csharp_place_accessorholder_attribute_on_same_line = if_owner_is_single_line
+resharper_csharp_space_within_single_line_array_initializer_braces = true
+resharper_csharp_wrap_arguments_style = wrap_if_long
+resharper_csharp_wrap_array_initializer_style = wrap_if_long
+resharper_csharp_wrap_before_primary_constructor_declaration_rpar = false
+resharper_csharp_wrap_chained_binary_expressions = wrap_if_long
+resharper_csharp_wrap_chained_binary_patterns = wrap_if_long
+resharper_csharp_wrap_chained_method_calls = wrap_if_long
+resharper_csharp_wrap_extends_list_style = wrap_if_long
+resharper_csharp_wrap_linq_expressions = chop_if_long
+resharper_csharp_wrap_list_pattern = wrap_if_long
+resharper_csharp_wrap_parameters_style = wrap_if_long
 
 # Braces always, also around single statements
 csharp_prefer_braces = true:warning
