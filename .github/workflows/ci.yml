@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -14,6 +15,8 @@ env:
 jobs:
   build:
     name: Build and check
+    # Drafts are skipped to save Actions minutes; pushes to main have no PR, so they always run.
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
