@@ -5,7 +5,11 @@ using ShutterRfBridge.Configuration;
 using ShutterRfBridge.Radio;
 using ShutterRfBridge.Transmission;
 
-var builder = WebApplication.CreateBuilder(args);
+// The config files sit next to the program, whatever folder it is started from.
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args, ContentRootPath = AppContext.BaseDirectory
+});
 
 // NLog takes its targets and rules from the configuration's NLog section.
 builder.Logging.ClearProviders();

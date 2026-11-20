@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using ShutterRfBridge.Tests.TestSupport;
 
@@ -18,5 +20,13 @@ public sealed class ProgramTests : IAsyncDisposable
         _application.SetSetting("Bridge:RemoteId", string.Empty);
 
         await Assert.ThrowsAsync<OptionsValidationException>(() => _application.PostAsync("/shutters/3/stop"));
+    }
+
+    [Fact]
+    public void Main_AnyWorkingDirectory_ReadsConfigurationFromTheProgramsFolder()
+    {
+        var environment = _application.Services.GetRequiredService<IHostEnvironment>();
+
+        Assert.Equal(AppContext.BaseDirectory, environment.ContentRootPath);
     }
 }
