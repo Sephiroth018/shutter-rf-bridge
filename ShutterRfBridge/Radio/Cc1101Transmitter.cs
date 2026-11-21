@@ -1,4 +1,6 @@
-namespace ShutterRfBridge;
+using ShutterRfBridge.Remote;
+
+namespace ShutterRfBridge.Radio;
 
 /// <summary>
 ///     Transmits commands through a CC1101 in packet mode, one <see cref="RemotePacketEncoder" /> packet per frame.
@@ -70,8 +72,9 @@ internal sealed class Cc1101Transmitter : IRemoteTransmitter
     }
 
     /// <inheritdoc />
-    /// <exception cref="InvalidOperationException">The radio isn't a CC1101, or its TX FIFO ran empty.</exception>
-    /// <exception cref="TimeoutException">The radio didn't return to IDLE in time.</exception>
+    /// <exception cref="TransmitException">
+    ///     The radio isn't a CC1101, its TX FIFO ran empty, it didn't return to IDLE in time, or an SPI transfer failed.
+    /// </exception>
     public void Transmit(RemoteFrame frame)
     {
         var packet = RemotePacketEncoder.Encode(frame).ToArray();
@@ -96,10 +99,10 @@ internal sealed class Cc1101Transmitter : IRemoteTransmitter
     {
         Strobe(ResetStrobe);
         WaitForIdle();
-        var version = _spi.Transfer([ReadStatusRegister | VersionRegister, 0])[1];
+        var version = Transfer([ReadStatusRegister | VersionRegister, 0])[1];
         if (version != ExpectedVersion)
         {
-            throw new InvalidOperationException(
+            throw new TransmitException(
                 $"The radio reports version 0x{version:X2}, not a CC1101's 0x{ExpectedVersion:X2}; check its wiring.");
         }
 
@@ -132,14 +135,14 @@ internal sealed class Cc1101Transmitter : IRemoteTransmitter
                     case IdleState:
                         return;
                     case TxUnderflowState:
-                        throw new InvalidOperationException("The CC1101's TX FIFO ran empty while transmitting.");
+                        throw new TransmitException("The CC1101's TX FIFO ran empty while transmitting.");
                 }
             }
 
             if (_timeProvider.GetElapsedTime(start) > StateTimeout)
             {
                 var lastState = state is null ? "chip not ready" : $"main state 0x{state:X2}";
-                throw new TimeoutException(
+                throw new TransmitException(
                     $"The CC1101 didn't return to IDLE within {StateTimeout.TotalMilliseconds} ms ({lastState}).");
             }
 
@@ -150,18 +153,30 @@ internal sealed class Cc1101Transmitter : IRemoteTransmitter
     /// <returns>The main state, or null while the chip isn't ready to answer, such as during a reset.</returns>
     private byte? ReadMainState()
     {
-        var read = _spi.Transfer([ReadStatusRegister | MainStateRegister, 0]);
+        var read = Transfer([ReadStatusRegister | MainStateRegister, 0]);
         return (read[0] & ChipNotReadyBit) == 0 ? (byte)(read[1] & MainStateMask) : null;
     }
 
     private void Write(byte address, byte[] values)
     {
         var header = values.Length > 1 ? (byte)(address | WriteBurst) : address;
-        _spi.Transfer([header, .. values]);
+        Transfer([header, .. values]);
     }
 
     private void Strobe(byte strobe)
     {
-        _spi.Transfer([strobe]);
+        Transfer([strobe]);
+    }
+
+    private byte[] Transfer(byte[] write)
+    {
+        try
+        {
+            return _spi.Transfer(write);
+        }
+        catch (IOException exception)
+        {
+            throw new TransmitException("An SPI transfer to the CC1101 failed.", exception);
+        }
     }
 }

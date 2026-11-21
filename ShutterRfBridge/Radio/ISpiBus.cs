@@ -1,4 +1,4 @@
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Radio;
 
 /// <summary>A full-duplex SPI connection to one device.</summary>
 /// <remarks>

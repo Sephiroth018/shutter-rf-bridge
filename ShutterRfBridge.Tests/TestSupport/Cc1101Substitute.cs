@@ -1,4 +1,6 @@
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
+using ShutterRfBridge.Radio;
 
 namespace ShutterRfBridge.Tests.TestSupport;
 
@@ -57,6 +59,13 @@ internal sealed class Cc1101Substitute
 
     /// <summary>Answers every main state read with this state.</summary>
     public Cc1101Substitute WithMainState(byte state) => WithMainStateReads([Ready, state]);
+
+    /// <summary>Makes every transfer fail the way the SPI driver does.</summary>
+    public Cc1101Substitute WithFailingTransfers()
+    {
+        _bus.Transfer(Arg.Any<byte[]>()).Throws(new IOException("The SPI transfer failed."));
+        return this;
+    }
 
     /// <summary>Makes the clock jump past every timeout after its first reading.</summary>
     public Cc1101Substitute WithClockRunningOut()
