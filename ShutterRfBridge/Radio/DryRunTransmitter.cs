@@ -1,4 +1,6 @@
-namespace ShutterRfBridge;
+using ShutterRfBridge.Remote;
+
+namespace ShutterRfBridge.Radio;
 
 /// <summary>Logs each command instead of transmitting it, for development without the radio.</summary>
 internal sealed partial class DryRunTransmitter : IRemoteTransmitter

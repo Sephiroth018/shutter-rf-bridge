@@ -1,7 +1,9 @@
+using ShutterRfBridge.Radio;
+using ShutterRfBridge.Remote;
 using ShutterRfBridge.Tests.TestSupport;
 using static ShutterRfBridge.Tests.TestSupport.Cc1101Substitute;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Radio;
 
 public sealed class Cc1101TransmitterTests
 {
@@ -79,35 +81,45 @@ public sealed class Cc1101TransmitterTests
     }
 
     [Fact]
-    public void Transmit_WrongVersion_ThrowsInvalidOperation()
+    public void Transmit_WrongVersion_ThrowsTransmitException()
     {
         var radio = new Cc1101Substitute().WithVersion(0xFF);
 
-        Assert.Throws<InvalidOperationException>(() => radio.BuildTransmitter().Transmit(Frame));
+        Assert.Throws<TransmitException>(() => radio.BuildTransmitter().Transmit(Frame));
     }
 
     [Fact]
-    public void Transmit_TxUnderflow_ThrowsInvalidOperation()
+    public void Transmit_TxUnderflow_ThrowsTransmitException()
     {
         var radio = new Cc1101Substitute().WithMainState(TxUnderflow);
 
-        Assert.Throws<InvalidOperationException>(() => radio.BuildTransmitter().Transmit(Frame));
+        Assert.Throws<TransmitException>(() => radio.BuildTransmitter().Transmit(Frame));
     }
 
     [Fact]
-    public void Transmit_RadioNeverReturnsToIdle_ThrowsTimeout()
+    public void Transmit_RadioNeverReturnsToIdle_ThrowsTransmitException()
     {
         var radio = new Cc1101Substitute().WithMainState(Transmitting).WithClockRunningOut();
 
-        Assert.Throws<TimeoutException>(() => radio.BuildTransmitter().Transmit(Frame));
+        Assert.Throws<TransmitException>(() => radio.BuildTransmitter().Transmit(Frame));
     }
 
     [Fact]
-    public void Transmit_ChipNeverReady_ThrowsTimeout()
+    public void Transmit_ChipNeverReady_ThrowsTransmitException()
     {
         var radio = new Cc1101Substitute().WithMainStateReads([NotReady, Idle]).WithClockRunningOut();
 
-        Assert.Throws<TimeoutException>(() => radio.BuildTransmitter().Transmit(Frame));
+        Assert.Throws<TransmitException>(() => radio.BuildTransmitter().Transmit(Frame));
+    }
+
+    [Fact]
+    public void Transmit_SpiTransferFails_ThrowsTransmitExceptionWithTheCause()
+    {
+        var radio = new Cc1101Substitute().WithFailingTransfers();
+
+        var exception = Assert.Throws<TransmitException>(() => radio.BuildTransmitter().Transmit(Frame));
+
+        Assert.IsType<IOException>(exception.InnerException);
     }
 
     [Fact]
@@ -115,7 +127,7 @@ public sealed class Cc1101TransmitterTests
     {
         var radio = new Cc1101Substitute().WithMainState(Transmitting).WithClockRunningOut();
 
-        Assert.Throws<TimeoutException>(() => radio.BuildTransmitter().Transmit(Frame));
+        Assert.Throws<TransmitException>(() => radio.BuildTransmitter().Transmit(Frame));
 
         Assert.Equal([[IdleStrobe], [FlushTxFifoStrobe]], radio.Transfers.TakeLast(2));
     }

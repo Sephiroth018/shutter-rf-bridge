@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using ShutterRfBridge.Radio;
+using ShutterRfBridge.Remote;
 using ShutterRfBridge.Tests.TestSupport;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Radio;
 
 public sealed class DryRunTransmitterTests
 {

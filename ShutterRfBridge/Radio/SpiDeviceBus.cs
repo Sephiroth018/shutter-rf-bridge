@@ -1,6 +1,6 @@
 using System.Device.Spi;
 
-namespace ShutterRfBridge;
+namespace ShutterRfBridge.Radio;
 
 /// <summary>The <see cref="ISpiBus" /> on the Raspberry Pi's SPI0 CE0, where the CC1101 is wired.</summary>
 internal sealed class SpiDeviceBus : ISpiBus, IDisposable

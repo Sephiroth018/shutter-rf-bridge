@@ -1,6 +1,7 @@
+using ShutterRfBridge.Remote;
 using ShutterRfBridge.Tests.TestSupport;
 
-namespace ShutterRfBridge.Tests;
+namespace ShutterRfBridge.Tests.Remote;
 
 public sealed class RemotePacketEncoderTests
 {
