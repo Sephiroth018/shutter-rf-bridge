@@ -15,6 +15,7 @@ namespace ShutterRfBridge.Tests.TestSupport;
 /// </summary>
 internal sealed class BridgeApplication : WebApplicationFactory<Program>
 {
+    private readonly List<ServiceDescriptor> _replacedServices = [];
     private readonly Dictionary<string, string?> _settings = [];
 
     public TransmitQueue Queue => Services.GetRequiredService<TransmitQueue>();
@@ -23,6 +24,12 @@ internal sealed class BridgeApplication : WebApplicationFactory<Program>
     public void SetSetting(string key, string? value)
     {
         _settings[key] = value;
+    }
+
+    /// <summary>Registers <paramref name="instance" /> in place of the service's own; call before the first request.</summary>
+    public void ReplaceService<TService>(TService instance) where TService : class
+    {
+        _replacedServices.Add(ServiceDescriptor.Singleton(instance));
     }
 
     /// <summary>Sends a <c>POST</c> without a body from <paramref name="client" /> and returns the status code.</summary>
@@ -44,6 +51,12 @@ internal sealed class BridgeApplication : WebApplicationFactory<Program>
     {
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(_settings));
         builder.ConfigureServices(services =>
-            services.Remove(services.Single(service => service.ImplementationType == typeof(TransmitWorker))));
+        {
+            services.Remove(services.Single(service => service.ImplementationType == typeof(TransmitWorker)));
+            foreach (var service in _replacedServices)
+            {
+                services.Add(service);
+            }
+        });
     }
 }
