@@ -25,8 +25,7 @@ public class ShuttersController : ControllerBase
         [Range(0, RemoteFrame.MaxChannel)] int channel,
         [Range(ShutterMove.MinLevel, ShutterMove.MaxLevel)]
         int level,
-        [Range(short.MinValue, ushort.MaxValue)]
-        int runtimeMs) =>
+        short runtimeMs) =>
         Move(channel, RemoteCommand.Up, level, runtimeMs);
 
     [HttpPost("down/{level}/{runtimeMs}")]
@@ -34,18 +33,17 @@ public class ShuttersController : ControllerBase
         [Range(0, RemoteFrame.MaxChannel)] int channel,
         [Range(ShutterMove.MinLevel, ShutterMove.MaxLevel)]
         int level,
-        [Range(short.MinValue, ushort.MaxValue)]
-        int runtimeMs) =>
+        short runtimeMs) =>
         Move(channel, RemoteCommand.Down, level, runtimeMs);
 
     [HttpPost("stop")]
     public IActionResult Stop([Range(0, RemoteFrame.MaxChannel)] int channel) => Queue(new ShutterStop(channel));
 
     /// <summary>
-    ///     Queues a move. CUxD sends run times as signed 16-bit numbers, so those above 32767 ms arrive negative and are
+    ///     Queues a move. CUxD sends run times as signed 16-bit numbers, so those above 32767 ms arrive negative; they're
     ///     read back as unsigned, which allows run times up to 65535 ms.
     /// </summary>
-    private IActionResult Move(int channel, RemoteCommand command, int level, int runtimeMs)
+    private IActionResult Move(int channel, RemoteCommand command, int level, short runtimeMs)
     {
         if (runtimeMs == 0)
         {
