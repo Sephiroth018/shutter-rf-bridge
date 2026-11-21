@@ -32,7 +32,9 @@ else
 }
 
 var app = builder.Build();
+// After the allow-list, which logs its own refusals.
 app.UseMiddleware<ClientAllowListMiddleware>();
+app.UseMiddleware<RejectedRequestLoggingMiddleware>();
 app.MapControllers();
 
 // A failed background service stops the host, which still ends with exit code 0; systemd restarts on a non-zero one.
