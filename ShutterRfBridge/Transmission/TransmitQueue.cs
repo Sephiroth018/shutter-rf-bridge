@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ShutterRfBridge.Remote;
 
 namespace ShutterRfBridge.Transmission;
@@ -6,7 +7,9 @@ namespace ShutterRfBridge.Transmission;
 ///     The commands waiting to be sent, and the channels that are moving. Stops, and moves for a moving channel, go
 ///     ahead of the other moves, in the order they arrive. A move's run time starts when it is taken to be sent.
 /// </summary>
-internal sealed partial class TransmitQueue : IDisposable
+[SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix",
+    Justification = "It is a queue; the rule only expects collection types to end in Queue.")]
+public partial class TransmitQueue : IDisposable
 {
     private readonly SemaphoreSlim _commandsAdded = new(0);
     private readonly Lock _lock = new();
@@ -26,6 +29,17 @@ internal sealed partial class TransmitQueue : IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposing)
+        {
+            return;
+        }
+
         lock (_lock)
         {
             foreach (var (_, timer) in _movingChannels.Values)

@@ -15,8 +15,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 builder.Logging.ClearProviders();
 builder.Host.UseNLog(new NLogAspNetCoreOptions { ShutdownOnDispose = true });
 
-builder.Services.AddControllers()
-    .ConfigureApplicationPartManager(manager => manager.FeatureProviders.Add(new InternalControllerFeatureProvider()));
+builder.Services.AddControllers();
 builder.Services.AddOptions<BridgeOptions>().BindConfiguration(BridgeOptions.SectionName).ValidateOnStart();
 builder.Services.AddSingleton<IValidateOptions<BridgeOptions>, BridgeOptionsValidator>();
 builder.Services.AddSingleton(TimeProvider.System);

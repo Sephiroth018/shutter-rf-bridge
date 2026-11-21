@@ -11,7 +11,7 @@ namespace ShutterRfBridge.Api;
 /// </summary>
 [ApiController]
 [Route("shutters/{channel}")]
-internal sealed class ShuttersController : ControllerBase
+public class ShuttersController : ControllerBase
 {
     private readonly TransmitQueue _queue;
 
