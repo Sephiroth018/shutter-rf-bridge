@@ -25,19 +25,37 @@ public class ShuttersController : ControllerBase
         [Range(0, RemoteFrame.MaxChannel)] int channel,
         [Range(ShutterMove.MinLevel, ShutterMove.MaxLevel)]
         int level,
-        [Range(1, int.MaxValue)] int runtimeMs) =>
-        Queue(new ShutterMove(channel, RemoteCommand.Up, level, TimeSpan.FromMilliseconds(runtimeMs)));
+        [Range(short.MinValue, ushort.MaxValue)]
+        int runtimeMs) =>
+        Move(channel, RemoteCommand.Up, level, runtimeMs);
 
     [HttpPost("down/{level}/{runtimeMs}")]
     public IActionResult Down(
         [Range(0, RemoteFrame.MaxChannel)] int channel,
         [Range(ShutterMove.MinLevel, ShutterMove.MaxLevel)]
         int level,
-        [Range(1, int.MaxValue)] int runtimeMs) =>
-        Queue(new ShutterMove(channel, RemoteCommand.Down, level, TimeSpan.FromMilliseconds(runtimeMs)));
+        [Range(short.MinValue, ushort.MaxValue)]
+        int runtimeMs) =>
+        Move(channel, RemoteCommand.Down, level, runtimeMs);
 
     [HttpPost("stop")]
     public IActionResult Stop([Range(0, RemoteFrame.MaxChannel)] int channel) => Queue(new ShutterStop(channel));
+
+    /// <summary>
+    ///     Queues a move. CUxD sends run times as signed 16-bit numbers, so those above 32767 ms arrive negative and are
+    ///     read back as unsigned, which allows run times up to 65535 ms.
+    /// </summary>
+    private IActionResult Move(int channel, RemoteCommand command, int level, int runtimeMs)
+    {
+        if (runtimeMs == 0)
+        {
+            ModelState.AddModelError(nameof(runtimeMs), "The run time must not be 0.");
+            return ValidationProblem();
+        }
+
+        var runTime = TimeSpan.FromMilliseconds(unchecked((ushort)runtimeMs));
+        return Queue(new ShutterMove(channel, command, level, runTime));
+    }
 
     private AcceptedResult Queue(ShutterCommand command)
     {
