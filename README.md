@@ -4,24 +4,25 @@ Controls radio-controlled external blinds and roller shutters from a Homematic C
 a Raspberry Pi 4 sends the shutters' 433 MHz remote control codes through a CC1101 transceiver
 and offers them as an HTTP API, which CUxD devices on the CCU3 call.
 
+## Requirements
+
+- **A Raspberry Pi 4 with Raspberry Pi OS 64-bit (Debian Trixie)**, with the CC1101 on SPI0 CE0.
+- **SPI turned on.** If it isn't yet, this turns it on and restarts the Pi:
+
+  ```bash
+  sudo raspi-config nonint do_spi 0 && sudo reboot
+  ```
+
+- **The .NET 10 SDK**, at least the version in `global.json`, **and git**. On the Pi, they come
+  from Microsoft's package repository, so the system's updates keep .NET patched:
+
+  ```bash
+  wget -q https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb && sudo dpkg -i /tmp/packages-microsoft-prod.deb && rm /tmp/packages-microsoft-prod.deb && sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0 git
+  ```
+
 ## Install on the Raspberry Pi
 
-For Raspberry Pi OS 64-bit (Debian Trixie), with the CC1101 on SPI0 CE0. Run each block as a
-whole, over SSH or in a terminal over RDP.
-
-### .NET SDK
-
-From Microsoft's package repository, so the system's updates keep .NET patched, together with git:
-
-```bash
-wget -q https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb && sudo dpkg -i /tmp/packages-microsoft-prod.deb && rm /tmp/packages-microsoft-prod.deb && sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0 git
-```
-
-If SPI isn't on yet, turn it on; the Pi restarts:
-
-```bash
-sudo raspi-config nonint do_spi 0 && sudo reboot
-```
+Run each block as a whole, over SSH or in a terminal over RDP.
 
 ### First install
 
@@ -47,8 +48,7 @@ sudo nano /etc/default/shutter-rf-bridge
 ```
 
 Fill in `Bridge__RemoteId` and the CCU's IP address in `Bridge__AllowedClients__0`; the comments in
-the file explain each value. Save with Ctrl+O and Enter, close with Ctrl+X. Once the service is
-installed, restart it after every change:
+the file explain each value. Once the service is installed, restart it after every change:
 
 ```bash
 sudo systemctl restart shutter-rf-bridge
@@ -56,12 +56,8 @@ sudo systemctl restart shutter-rf-bridge
 
 ### Update
 
-Update while no shutter is moving: a restart drops pending timed Stops, so a shutter in a partial
-move would run to its end.
-
-```bash
-~/shutter-rf-bridge/deploy/deploy.sh
-```
+To update, run the deploy script again, while no shutter is moving: a restart drops pending timed
+Stops, so a shutter in a partial move would run to its end.
 
 .NET's security patches come with the system's updates. Restart the service afterwards, so it runs
 on the patched version:
@@ -85,23 +81,11 @@ journalctl -u shutter-rf-bridge -n 50 --no-pager
 ```
 
 The service's own log (commands received and sent, errors) is in `/var/log/shutter-rf-bridge`. Its
-lines are written in batches, after 100 lines or 5 minutes; errors at once:
-
-```bash
-tail -n 50 /var/log/shutter-rf-bridge/shutter-rf-bridge.log
-```
-
-To watch it live, remove the `#` in front of `NLog__targets__file__target__bufferSize=1` in the
-settings file and restart the service, then run the block below (Ctrl+C ends it). Put the `#` back
-afterwards, to spare the SD card.
-
-```bash
-tail -F /var/log/shutter-rf-bridge/shutter-rf-bridge.log
-```
+lines are written in batches, after 100 lines or 5 minutes; errors at once. To watch it live,
+remove the `#` in front of `NLog__targets__file__target__bufferSize=1` in the settings file and
+restart the service. Put the `#` back afterwards, to spare the SD card.
 
 ## Build
-
-Requires the .NET 10 SDK, at least the version in `global.json`.
 
 ```powershell
 dotnet tool restore
