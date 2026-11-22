@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\deploy\appsettings.json" Link="deploy\appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ShutterRfBridge\ShutterRfBridge.csproj" />
   </ItemGroup>
 

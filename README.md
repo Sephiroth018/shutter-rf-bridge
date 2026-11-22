@@ -41,14 +41,19 @@ the script again, which builds and starts the service:
 
 ### Settings
 
-The house values live in `/etc/default/shutter-rf-bridge`:
+The house values live in `/etc/shutter-rf-bridge/appsettings.json`, which overrides the service's
+built-in settings:
 
 ```bash
-sudo nano /etc/default/shutter-rf-bridge
+sudo nano /etc/shutter-rf-bridge/appsettings.json
 ```
 
-Fill in `Bridge__RemoteId` and the CCU's IP address in `Bridge__AllowedClients__0`; the comments in
-the file explain each value. Once the service is installed, restart it after every change.
+Fill in `RemoteId` and the CCU's IP address as the first entry of `AllowedClients`; the comments in
+the file explain each value. Once the service is installed, restart it after every change:
+
+```bash
+sudo systemctl restart shutter-rf-bridge
+```
 
 ### Update
 
@@ -62,8 +67,8 @@ service so it runs on the patched .NET.
 systemd's journal has the service's starts, stops and crashes, including a missing or wrong setting
 at startup. The service's own log (commands received and sent, errors) is in `/var/log/shutter-rf-bridge`. Its
 lines are written in batches, after 100 lines or 5 minutes; errors at once. To watch it live,
-remove the `#` in front of `NLog__targets__file__target__bufferSize=1` in the settings file and
-restart the service. Put the `#` back afterwards, to spare the SD card.
+remove the `//` in front of the `"NLog"` line in the settings file and restart the service. Put the
+`//` back afterwards, to spare the SD card.
 
 ### Uninstall
 
@@ -79,7 +84,7 @@ The settings are kept, so running the deploy script again reinstalls the service
 remove them as well, note the house values first, if you still need them:
 
 ```bash
-sudo cat /etc/default/shutter-rf-bridge
+sudo cat /etc/shutter-rf-bridge/appsettings.json
 ```
 
 Then run the script with `--purge`:
@@ -115,7 +120,7 @@ In each shutter's channel settings:
 1. Tick `BLIND|CMD_EXEC`.
 2. Enter the three command lines. Replace `<pi>` with the Pi's IP address, and `<channel>` with the
    shutter's channel on the physical remote (0–15), which needn't match the CUxD channel number.
-   The port is the one in `ASPNETCORE_URLS` in the settings file, 5080 by default:
+   The port is the one in `Urls` in the settings file, 5080 by default:
 
    | Field | Command |
    |---|---|

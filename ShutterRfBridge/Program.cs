@@ -10,6 +10,8 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args, ContentRootPath = AppContext.BaseDirectory
 });
+// Added before anything reads the configuration, NLog included.
+builder.Configuration.AddSettingsFile(Environment.GetEnvironmentVariable(SettingsFileConfiguration.DirectoryVariable));
 
 // NLog takes its targets and rules from the configuration's NLog section.
 builder.Logging.ClearProviders();
