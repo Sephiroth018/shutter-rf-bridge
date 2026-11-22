@@ -38,7 +38,7 @@ fi
 
 publish_dir=$(mktemp --directory)
 trap 'rm -rf "$publish_dir"' EXIT
-dotnet publish "$repository/ShutterRfBridge" --configuration Release --output "$publish_dir"
+dotnet publish "$repository/ShutterRfBridge" --configuration Release --runtime linux-arm64 --self-contained false --output "$publish_dir"
 
 sudo install --mode=644 "$repository/deploy/$service.service" /etc/systemd/system/
 sudo systemctl daemon-reload
