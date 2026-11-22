@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using ShutterRfBridge.Tests.TestSupport;
+using ShutterRfBridge.Transmission;
 
 namespace ShutterRfBridge.Tests;
 
@@ -20,6 +21,14 @@ public sealed class ProgramTests : IAsyncDisposable
         _application.SetSetting("Bridge:RemoteId", string.Empty);
 
         await Assert.ThrowsAsync<OptionsValidationException>(() => _application.PostAsync("/shutters/3/stop"));
+    }
+
+    [Fact]
+    public void Main_Stopping_WaitsLongerThanTheLongestRunTime()
+    {
+        var hostOptions = _application.Services.GetRequiredService<IOptions<HostOptions>>().Value;
+
+        Assert.True(hostOptions.ShutdownTimeout > ShutterMove.MaxRunTime);
     }
 
     [Fact]

@@ -9,6 +9,9 @@ internal sealed record ShutterMove(int Channel, RemoteCommand Command, int Level
     public const int MinLevel = 0;
     public const int MaxLevel = 1000;
 
+    /// <summary>The longest run time CUxD can send: an unsigned 16-bit number of milliseconds.</summary>
+    public static readonly TimeSpan MaxRunTime = TimeSpan.FromMilliseconds(ushort.MaxValue);
+
     /// <summary>
     ///     Whether the move ends between the end positions, so a Stop has to end it. At an end position the motor
     ///     stops by itself.

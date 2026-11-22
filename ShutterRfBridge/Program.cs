@@ -19,6 +19,10 @@ builder.Host.UseNLog(new NLogAspNetCoreOptions { ShutdownOnDispose = true });
 
 // Tells systemd once the host has started and handles its stop signal; does nothing outside systemd.
 builder.Services.AddSystemd();
+// Stopping waits for pending timed Stops (TransmitWorker.StoppingAsync), plus a margin for queued commands; the
+// systemd unit's TimeoutStopSec is longer still.
+builder.Services.Configure<HostOptions>(options =>
+    options.ShutdownTimeout = ShutterMove.MaxRunTime + TimeSpan.FromSeconds(10));
 
 builder.Services.AddControllers();
 builder.Services.AddOptions<BridgeOptions>().BindConfiguration(BridgeOptions.SectionName).ValidateOnStart();

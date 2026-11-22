@@ -58,10 +58,12 @@ sudo systemctl restart shutter-rf-bridge
 
 ### Update
 
-To update, run the deploy script again, while no shutter is moving: a restart drops pending timed
-Stops, so a shutter in a partial move would run to its end. Without new commits, it leaves the
-running service alone. After system updates, restart the
-service so it runs on the patched .NET.
+To update, run the deploy script again. Without new commits, it leaves the running service alone.
+After system updates, restart the service so it runs on the patched .NET.
+
+A restart, like any stop of the service, first sends the pending timed Stops, so a shutter in a
+partial move still stops at its target. While one is pending, the restart takes up to its run
+time, at most about 75 seconds; the service still takes commands meanwhile.
 
 ### Logs
 
@@ -73,9 +75,8 @@ back afterwards, to spare the SD card.
 
 ### Uninstall
 
-Uninstall while no shutter is moving, since stopping the service drops pending timed Stops (see
-[Update](#update)). The uninstall script stops the service and removes it, its program, its logs and
-its system user, and is safe to run again:
+The uninstall script stops the service, after its pending timed Stops (see [Update](#update)), and
+removes it, its program, its logs and its system user. It is safe to run again:
 
 ```bash
 ~/shutter-rf-bridge/deploy/uninstall.sh
@@ -145,7 +146,8 @@ The channel's other fields aren't needed.
 - **The CCU can't stop a shutter it doesn't think is moving**, such as one started with the
   physical remote. Use the remote instead.
 - **Run times are at most 65 seconds** (see step 3 above).
-- **A restart of the service drops pending timed Stops** (see [Update](#update)).
+- **A restart waits for pending timed Stops**, up to about 75 seconds (see [Update](#update)). A
+  crash or power cut still drops them, so a shutter in a partial move runs to its end.
 
 ## HTTP API
 
@@ -222,8 +224,9 @@ logs what it would send over the radio, uses a made-up remote ID and allows `127
 
 The service logs with [NLog](https://nlog-project.org/):
 
-- **Information:** each command received, each timed Stop queued and each command sent.
-- **Warning:** refused and rejected requests.
+- **Information:** each command received, each timed Stop queued and each command sent, and a stop
+  that waits for pending commands.
+- **Warning:** refused and rejected requests, and a stop that ends with commands still pending.
 - **Error:** a command that failed to send, after which the service goes on with the next one, and
   an unexpected error, which stops the service so that systemd restarts it (up to 5 times in 5
   minutes).

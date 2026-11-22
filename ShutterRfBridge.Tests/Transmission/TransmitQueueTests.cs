@@ -180,6 +180,72 @@ public sealed class TransmitQueueTests : IDisposable
         Assert.False(_queue.DequeueAsync(_cancellationToken).IsCompleted);
     }
 
+    [Fact]
+    public void WaitForPendingCommandsAsync_NothingPending_CompletesAtOnce()
+    {
+        var wait = _queue.WaitForPendingCommandsAsync(_cancellationToken);
+
+        Assert.True(wait.IsCompletedSuccessfully);
+    }
+
+    [Fact]
+    public async Task WaitForPendingCommandsAsync_QueuedCommand_CompletesOnceItIsTaken()
+    {
+        _queue.Enqueue(new ShutterStop(3));
+        var wait = _queue.WaitForPendingCommandsAsync(_cancellationToken);
+
+        await Dequeue();
+
+        await wait;
+    }
+
+    [Fact]
+    public async Task WaitForPendingCommandsAsync_PartialMoveMoving_Waits()
+    {
+        _queue.Enqueue(PartialMove(3));
+        await Dequeue();
+
+        var wait = _queue.WaitForPendingCommandsAsync(_cancellationToken);
+
+        Assert.False(wait.IsCompleted);
+    }
+
+    [Fact]
+    public async Task WaitForPendingCommandsAsync_PartialMoveMoving_CompletesOnceItsTimedStopIsTaken()
+    {
+        _queue.Enqueue(PartialMove(3));
+        await Dequeue();
+        var wait = _queue.WaitForPendingCommandsAsync(_cancellationToken);
+
+        _time.Timers[0].Fire();
+        await Dequeue();
+
+        await wait;
+    }
+
+    [Fact]
+    public async Task WaitForPendingCommandsAsync_FullMoveMoving_CompletesAtOnce()
+    {
+        _queue.Enqueue(new ShutterMove(3, RemoteCommand.Up, ShutterMove.MaxLevel, RunTime));
+        await Dequeue();
+
+        var wait = _queue.WaitForPendingCommandsAsync(_cancellationToken);
+
+        Assert.True(wait.IsCompletedSuccessfully);
+    }
+
+    [Fact]
+    public async Task WaitForPendingCommandsAsync_Cancelled_IsCancelled()
+    {
+        using var cancellation = new CancellationTokenSource();
+        _queue.Enqueue(new ShutterStop(3));
+        var wait = _queue.WaitForPendingCommandsAsync(cancellation.Token);
+
+        await cancellation.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => wait);
+    }
+
     private static ShutterMove PartialMove(int channel) => new(channel, RemoteCommand.Up, 500, RunTime);
 
     private Task<ShutterCommand> Dequeue() => _queue.DequeueAsync(_cancellationToken);

@@ -21,11 +21,18 @@ public partial class TransmitQueue : IDisposable
     private readonly List<ShutterCommand> _queuedMoves = [];
     private readonly TimeProvider _timeProvider;
 
+    // Completed and cleared once nothing is pending; created only while something waits for it.
+    private TaskCompletionSource? _nothingPending;
+
     public TransmitQueue(TimeProvider timeProvider, ILogger<TransmitQueue> logger)
     {
         _timeProvider = timeProvider;
         _logger = logger;
     }
+
+    private bool HasPendingCommands =>
+        _priorityCommands.Count > 0 || _queuedMoves.Count > 0 ||
+        _movingChannels.Values.Any(movement => movement.Move.IsPartial);
 
     public void Dispose()
     {
@@ -113,8 +120,33 @@ public partial class TransmitQueue : IDisposable
                     StartMovement(move);
                 }
 
+                // Only taking a command can leave nothing pending: every other change queues a command.
+                if (_nothingPending is not null && !HasPendingCommands)
+                {
+                    _nothingPending.SetResult();
+                    _nothingPending = null;
+                }
+
                 return command;
             }
+        }
+    }
+
+    /// <summary>
+    ///     Waits until no command is queued and no partial move's timed Stop is pending. A full move owes nothing, so
+    ///     its movement doesn't count.
+    /// </summary>
+    public Task WaitForPendingCommandsAsync(CancellationToken cancellationToken)
+    {
+        lock (_lock)
+        {
+            if (!HasPendingCommands)
+            {
+                return Task.CompletedTask;
+            }
+
+            _nothingPending ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            return _nothingPending.Task.WaitAsync(cancellationToken);
         }
     }
 

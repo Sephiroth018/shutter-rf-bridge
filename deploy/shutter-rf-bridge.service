@@ -13,6 +13,8 @@ ConfigurationDirectory=shutter-rf-bridge
 ExecStart=/usr/bin/dotnet /opt/shutter-rf-bridge/ShutterRfBridge.dll
 Restart=on-failure
 RestartSec=10
+# Above the service's own shutdown timeout (about 75 s), which waits for pending timed Stops.
+TimeoutStopSec=90
 # NLog's folder, /var/log/shutter-rf-bridge, created for and owned by the service's user.
 LogsDirectory=shutter-rf-bridge
 NoNewPrivileges=yes

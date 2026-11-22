@@ -17,14 +17,14 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
     private readonly CancellationToken _cancellationToken = TestContext.Current.CancellationToken;
     private readonly ILogger<TransmitWorker> _logger = Substitute.For<ILogger<TransmitWorker>>();
     private readonly TransmitQueue _queue;
+    private readonly TimeProviderSubstitute _time = new();
     private readonly TaskCompletionSource<RemoteFrame> _transmitted = new();
     private readonly IRemoteTransmitter _transmitter = Substitute.For<IRemoteTransmitter>();
     private readonly TransmitWorker _worker;
 
     public TransmitWorkerTests()
     {
-        _queue = new TransmitQueue(new TimeProviderSubstitute().TimeProvider,
-            Substitute.For<ILogger<TransmitQueue>>());
+        _queue = new TransmitQueue(_time.TimeProvider, Substitute.For<ILogger<TransmitQueue>>());
         _logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
         var options = Options.Create(new BridgeOptions { RemoteId = MadeUpRemote.Id, AllowedClients = ["::1"] });
         _worker = new TransmitWorker(_queue, _transmitter, options, _logger);
@@ -81,4 +81,73 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
 
         await Assert.ThrowsAsync<ArgumentException>(() => execution.WaitAsync(TransmitTimeout, _cancellationToken));
     }
+
+    [Fact]
+    public async Task StoppingAsync_PendingTimedStop_Waits()
+    {
+        await StartMovingPartially(3);
+
+        var stopping = _worker.StoppingAsync(_cancellationToken);
+
+        Assert.False(stopping.IsCompleted);
+    }
+
+    [Fact]
+    public async Task StoppingAsync_PendingTimedStop_SendsItBeforeTheWorkerStops()
+    {
+        await StartMovingPartially(3);
+        var stopping = _worker.StoppingAsync(_cancellationToken);
+
+        _time.Timers[0].Fire();
+        await stopping.WaitAsync(TransmitTimeout, _cancellationToken);
+        await _worker.StopAsync(_cancellationToken);
+
+        _transmitter.Received(1).Transmit(new RemoteFrame(MadeUpRemote.Id, 3, RemoteCommand.Stop));
+    }
+
+    [Fact]
+    public async Task StoppingAsync_ShutdownTimeoutEnds_LogsAWarning()
+    {
+        await StartMovingPartially(3);
+        using var shutdownTimeout = new CancellationTokenSource();
+        var stopping = _worker.StoppingAsync(shutdownTimeout.Token);
+
+        await shutdownTimeout.CancelAsync();
+        await stopping.WaitAsync(TransmitTimeout, _cancellationToken);
+
+        ReceivedWarning();
+    }
+
+    [Fact]
+    public async Task StoppingAsync_WorkerFailed_ReturnsWithAWarning()
+    {
+        _transmitter.When(transmitter => transmitter.Transmit(Arg.Any<RemoteFrame>()))
+            .Throw(new ArgumentException("A bug."));
+        await _worker.StartAsync(_cancellationToken);
+        var execution = _worker.ExecuteTask;
+        Assert.NotNull(execution);
+        _queue.Enqueue(PartialMove(3));
+        await Assert.ThrowsAsync<ArgumentException>(() => execution.WaitAsync(TransmitTimeout, _cancellationToken));
+
+        await _worker.StoppingAsync(_cancellationToken).WaitAsync(TransmitTimeout, _cancellationToken);
+
+        ReceivedWarning();
+    }
+
+    private static ShutterMove PartialMove(int channel) =>
+        new(channel, RemoteCommand.Down, 500, TimeSpan.FromSeconds(10));
+
+    /// <summary>Starts the worker and returns once it has sent a partial move, whose timed Stop is then pending.</summary>
+    private async Task StartMovingPartially(int channel)
+    {
+        _transmitter.When(transmitter => transmitter.Transmit(Arg.Any<RemoteFrame>()))
+            .Do(call => _transmitted.TrySetResult(call.Arg<RemoteFrame>()));
+        await _worker.StartAsync(_cancellationToken);
+        _queue.Enqueue(PartialMove(channel));
+        await _transmitted.Task.WaitAsync(TransmitTimeout, _cancellationToken);
+    }
+
+    private void ReceivedWarning() =>
+        _logger.Received(1).Log(LogLevel.Warning, Arg.Any<EventId>(), Arg.Any<Arg.AnyType>(), Arg.Any<Exception?>(),
+            Arg.Any<Func<Arg.AnyType, Exception?, string>>());
 }
