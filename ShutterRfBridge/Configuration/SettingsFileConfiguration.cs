@@ -13,12 +13,12 @@ internal static class SettingsFileConfiguration
 
     /// <summary>
     ///     Adds <see cref="FileName" /> in <paramref name="directory" /> above the built-in <c>appsettings*.json</c> and
-    ///     below the environment variables, so those can still override it. Without a folder, adds nothing.
+    ///     below the environment variables, so those can still override it. Without a folder (null or empty), adds nothing.
     /// </summary>
     /// <exception cref="FileNotFoundException">The folder has no settings file.</exception>
     public static void AddSettingsFile(this IConfigurationBuilder configuration, string? directory)
     {
-        if (directory is null)
+        if (string.IsNullOrEmpty(directory))
         {
             return;
         }

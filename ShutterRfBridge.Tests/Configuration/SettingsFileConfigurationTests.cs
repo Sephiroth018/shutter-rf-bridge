@@ -48,12 +48,14 @@ public sealed class SettingsFileConfigurationTests : IDisposable
         Assert.Equal("environment", configuration[_key]);
     }
 
-    [Fact]
-    public void AddSettingsFile_NoDirectory_KeepsTheBuiltInValue()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void AddSettingsFile_NoDirectory_KeepsTheBuiltInValue(string? directory)
     {
         using var configuration = CreateServiceConfiguration();
 
-        configuration.AddSettingsFile(null);
+        configuration.AddSettingsFile(directory);
 
         Assert.Equal("built-in", configuration[_key]);
     }
