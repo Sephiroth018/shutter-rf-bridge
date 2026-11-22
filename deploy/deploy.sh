@@ -45,7 +45,9 @@ sudo systemctl daemon-reload
 # Stopped before its files are replaced, since a running service may still load some of them.
 sudo systemctl stop "$service"
 # Clears the start limit, which otherwise refuses starts after repeated failures.
-sudo systemctl reset-failed "$service"
+if systemctl is-failed --quiet "$service"; then
+  sudo systemctl reset-failed "$service"
+fi
 sudo rm -rf "$install_dir"
 sudo install --directory --mode=755 "$install_dir"
 sudo cp -r "$publish_dir/." "$install_dir/"
