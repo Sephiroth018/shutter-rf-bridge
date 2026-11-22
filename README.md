@@ -65,11 +65,24 @@ service so it runs on the patched .NET.
 
 ### Logs
 
-systemd's journal has the service's starts, stops and crashes, including a missing or wrong setting
-at startup. The service's own log (commands received and sent, errors) is in
-`/var/log/shutter-rf-bridge`, written in batches (see [Logging](#logging)). To watch it live, remove
-the `//` in front of the `"NLog"` line in the settings file and restart the service. Put the `//`
-back afterwards, to spare the SD card.
+The service's log (commands received and sent, errors) goes to two places (see
+[Logging](#logging)):
+
+- **systemd's journal**, next to the service's starts, stops and crashes, including a missing or
+  wrong setting at startup. Raspberry Pi OS keeps the journal in memory, so it starts empty after a
+  reboot. To watch it live:
+
+  ```bash
+  journalctl -u shutter-rf-bridge -f
+  ```
+
+  To see only the errors:
+
+  ```bash
+  journalctl -u shutter-rf-bridge -p err
+  ```
+
+- **`/var/log/shutter-rf-bridge`**, the history that survives a reboot, written in batches.
 
 ### Uninstall
 
@@ -234,9 +247,13 @@ ASP.NET Core's own entries below warning level are left out, to spare the SD car
 
 - **File:** `/var/log/shutter-rf-bridge/shutter-rf-bridge.log`, archived daily, with archives kept for
   31 days and the folder capped at about 10 MB.
-- **Buffering:** entries are written after 100 entries or 5 minutes, whichever comes first; errors
-  are written at once.
-- **Development** logs to the console only.
+- **Buffering:** entries are written to the file after 100 entries or 5 minutes, whichever comes
+  first; errors are written at once.
+- **Console:** every entry is also written to the console at once, as one line that starts with its
+  level. Under systemd, the lines go to the journal, each with its level as the journal's priority.
+  Raspberry Pi OS keeps the journal in memory; on a system that stores it on the SD card, these
+  lines are written there unbuffered.
+- **Development** logs to the console only, with the time and without the priority.
 
 NLog is configured in the `NLog` section of the settings. To change it, override that section in
 the settings file on the Pi, as described in NLog's
