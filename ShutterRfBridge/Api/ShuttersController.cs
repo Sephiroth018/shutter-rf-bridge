@@ -41,7 +41,7 @@ public class ShuttersController : ControllerBase
 
     /// <summary>
     ///     Queues a move. CUxD sends run times as signed 16-bit numbers, so those above 32767 ms arrive negative; they're
-    ///     read back as unsigned, which allows run times up to 65535 ms.
+    ///     read back as unsigned, which allows run times up to <see cref="ShutterMove.MaxRunTime" />.
     /// </summary>
     private IActionResult Move(int channel, RemoteCommand command, int level, short runtimeMs)
     {

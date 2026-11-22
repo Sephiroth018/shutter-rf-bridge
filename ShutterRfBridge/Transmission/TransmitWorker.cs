@@ -35,7 +35,8 @@ internal sealed partial class TransmitWorker : BackgroundService, IHostedLifecyc
 
     /// <summary>
     ///     Waits for the queue's pending commands. The host calls this before stopping any service, so the HTTP API still
-    ///     takes commands meanwhile; the token is cancelled when the host's shutdown timeout ends.
+    ///     takes commands meanwhile; the token is cancelled when the host's shutdown timeout ends. The command taken last
+    ///     may still be on air when this returns; stopping the worker waits for it, as it ends the loop.
     /// </summary>
     public async Task StoppingAsync(CancellationToken cancellationToken)
     {
@@ -52,7 +53,6 @@ internal sealed partial class TransmitWorker : BackgroundService, IHostedLifecyc
             await Task.WhenAny(nothingPending, ExecuteTask);
         }
 
-        // The command taken last may still be on air; stopping the worker waits for that, as it ends the loop.
         if (!nothingPending.IsCompletedSuccessfully)
         {
             LogStoppedWithPendingCommands();

@@ -14,6 +14,8 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
     // Only a safety net against a hanging test; the tests wait for the transmitter's calls, not for time.
     private static readonly TimeSpan TransmitTimeout = TimeSpan.FromSeconds(10);
 
+    private static readonly ShutterMove PartialMove = new(3, RemoteCommand.Down, 500, TimeSpan.FromSeconds(10));
+
     private readonly CancellationToken _cancellationToken = TestContext.Current.CancellationToken;
     private readonly ILogger<TransmitWorker> _logger = Substitute.For<ILogger<TransmitWorker>>();
     private readonly TransmitQueue _queue;
@@ -70,12 +72,7 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
     [Fact]
     public async Task ExecuteAsync_UnexpectedException_FaultsTheWorker()
     {
-        _transmitter.When(transmitter => transmitter.Transmit(Arg.Any<RemoteFrame>()))
-            .Throw(new ArgumentException("A bug."));
-        await _worker.StartAsync(_cancellationToken);
-
-        var execution = _worker.ExecuteTask;
-        Assert.NotNull(execution);
+        var execution = await StartFailingWorker();
 
         _queue.Enqueue(new ShutterStop(3));
 
@@ -85,7 +82,7 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
     [Fact]
     public async Task StoppingAsync_PendingTimedStop_Waits()
     {
-        await StartMovingPartially(3);
+        await StartMovingPartially();
 
         var stopping = _worker.StoppingAsync(_cancellationToken);
 
@@ -95,20 +92,20 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
     [Fact]
     public async Task StoppingAsync_PendingTimedStop_SendsItBeforeTheWorkerStops()
     {
-        await StartMovingPartially(3);
+        await StartMovingPartially();
         var stopping = _worker.StoppingAsync(_cancellationToken);
 
         _time.Timers[0].Fire();
         await stopping.WaitAsync(TransmitTimeout, _cancellationToken);
         await _worker.StopAsync(_cancellationToken);
 
-        _transmitter.Received(1).Transmit(new RemoteFrame(MadeUpRemote.Id, 3, RemoteCommand.Stop));
+        _transmitter.Received(1).Transmit(new RemoteFrame(MadeUpRemote.Id, PartialMove.Channel, RemoteCommand.Stop));
     }
 
     [Fact]
     public async Task StoppingAsync_ShutdownTimeoutEnds_LogsAWarning()
     {
-        await StartMovingPartially(3);
+        await StartMovingPartially();
         using var shutdownTimeout = new CancellationTokenSource();
         var stopping = _worker.StoppingAsync(shutdownTimeout.Token);
 
@@ -121,12 +118,8 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
     [Fact]
     public async Task StoppingAsync_WorkerFailed_ReturnsWithAWarning()
     {
-        _transmitter.When(transmitter => transmitter.Transmit(Arg.Any<RemoteFrame>()))
-            .Throw(new ArgumentException("A bug."));
-        await _worker.StartAsync(_cancellationToken);
-        var execution = _worker.ExecuteTask;
-        Assert.NotNull(execution);
-        _queue.Enqueue(PartialMove(3));
+        var execution = await StartFailingWorker();
+        _queue.Enqueue(PartialMove);
         await Assert.ThrowsAsync<ArgumentException>(() => execution.WaitAsync(TransmitTimeout, _cancellationToken));
 
         await _worker.StoppingAsync(_cancellationToken).WaitAsync(TransmitTimeout, _cancellationToken);
@@ -134,16 +127,24 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
         ReceivedWarning();
     }
 
-    private static ShutterMove PartialMove(int channel) =>
-        new(channel, RemoteCommand.Down, 500, TimeSpan.FromSeconds(10));
+    /// <summary>Starts the worker with a transmitter that throws a bug's exception; returns the worker's loop.</summary>
+    private async Task<Task> StartFailingWorker()
+    {
+        _transmitter.When(transmitter => transmitter.Transmit(Arg.Any<RemoteFrame>()))
+            .Throw(new ArgumentException("A bug."));
+        await _worker.StartAsync(_cancellationToken);
+        var execution = _worker.ExecuteTask;
+        Assert.NotNull(execution);
+        return execution;
+    }
 
     /// <summary>Starts the worker and returns once it has sent a partial move, whose timed Stop is then pending.</summary>
-    private async Task StartMovingPartially(int channel)
+    private async Task StartMovingPartially()
     {
         _transmitter.When(transmitter => transmitter.Transmit(Arg.Any<RemoteFrame>()))
             .Do(call => _transmitted.TrySetResult(call.Arg<RemoteFrame>()));
         await _worker.StartAsync(_cancellationToken);
-        _queue.Enqueue(PartialMove(channel));
+        _queue.Enqueue(PartialMove);
         await _transmitted.Task.WaitAsync(TransmitTimeout, _cancellationToken);
     }
 
