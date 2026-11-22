@@ -225,7 +225,8 @@ The service logs with [NLog](https://nlog-project.org/):
 - **Information:** each command received, each timed Stop queued and each command sent.
 - **Warning:** refused and rejected requests.
 - **Error:** a command that failed to send, after which the service goes on with the next one, and
-  an unexpected error, which stops the service so that systemd restarts it.
+  an unexpected error, which stops the service so that systemd restarts it (up to 5 times in 5
+  minutes).
 
 ASP.NET Core's own entries below warning level are left out, to spare the SD card.
 
