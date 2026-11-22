@@ -15,6 +15,8 @@ Restart=on-failure
 RestartSec=10
 # NLog's folder, /var/log/shutter-rf-bridge, created for and owned by the service's user.
 LogsDirectory=shutter-rf-bridge
+# Names the service's console lines in the journal; without it they carry the program's name, dotnet.
+SyslogIdentifier=shutter-rf-bridge
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes

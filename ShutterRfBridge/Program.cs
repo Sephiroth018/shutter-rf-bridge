@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Options;
+using NLog;
 using NLog.Web;
 using ShutterRfBridge.Api;
 using ShutterRfBridge.Configuration;
+using ShutterRfBridge.Logging;
 using ShutterRfBridge.Radio;
 using ShutterRfBridge.Transmission;
 
@@ -13,7 +15,8 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 // Added before anything reads the configuration, NLog included.
 builder.Configuration.AddSettingsFile(Environment.GetEnvironmentVariable(SettingsFileConfiguration.DirectoryVariable));
 
-// NLog takes its targets and rules from the configuration's NLog section.
+// NLog takes its targets and rules from the configuration's NLog section, whose layouts use the renderer.
+LogManager.Setup().SetupExtensions(extensions => extensions.RegisterLayoutRenderer<JournalPriorityLayoutRenderer>());
 builder.Logging.ClearProviders();
 builder.Host.UseNLog(new NLogAspNetCoreOptions { ShutdownOnDispose = true });
 
