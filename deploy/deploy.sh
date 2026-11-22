@@ -4,7 +4,8 @@
 set -euo pipefail
 
 readonly service=shutter-rf-bridge
-readonly environment_file=/etc/default/$service
+readonly settings_dir=/etc/$service
+readonly settings_file=$settings_dir/appsettings.json
 readonly install_dir=/opt/$service
 repository=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 readonly repository
@@ -30,11 +31,16 @@ if ! id "$service" &> /dev/null; then
   sudo useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin "$service"
 fi
 
-if [[ ! -e $environment_file ]]; then
-  sudo install --mode=600 "$repository/deploy/$service.env" "$environment_file"
-  echo "Created $environment_file. Fill in the house values, then run this script again."
+if [[ ! -e $settings_file ]]; then
+  # Created here, since systemd creates the unit's ConfigurationDirectory= only when the service starts.
+  sudo install --directory --mode=755 "$settings_dir"
+  sudo install --mode=640 --owner=root --group="$service" "$repository/deploy/appsettings.json" "$settings_file"
+  echo "Created $settings_file. Fill in the house values, then run this script again."
   exit 0
 fi
+# Set on every run: uninstall.sh keeps the file but removes the group, which a reinstall creates anew.
+sudo chown root:"$service" "$settings_file"
+sudo chmod 640 "$settings_file"
 
 commit=$(git -C "$repository" rev-parse HEAD)
 readonly commit

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 readonly service=shutter-rf-bridge
-readonly environment_file=/etc/default/$service
+readonly settings_dir=/etc/$service
 readonly install_dir=/opt/$service
 readonly unit_file=/etc/systemd/system/$service.service
 readonly log_dir=/var/log/$service
@@ -44,10 +44,10 @@ if id "$service" &> /dev/null; then
 fi
 
 if $purge; then
-  sudo rm -f "$environment_file"
+  sudo rm -rf "$settings_dir"
 fi
-if [[ -e $environment_file ]]; then
-  echo "$service is uninstalled. Its settings are kept in $environment_file; --purge removes them."
+if [[ -e $settings_dir ]]; then
+  echo "$service is uninstalled. Its settings are kept in $settings_dir; --purge removes them."
 else
   echo "$service is uninstalled."
 fi

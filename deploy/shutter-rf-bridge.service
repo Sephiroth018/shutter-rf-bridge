@@ -8,7 +8,8 @@ StartLimitBurst=5
 Type=notify
 User=shutter-rf-bridge
 SupplementaryGroups=spi
-EnvironmentFile=/etc/default/shutter-rf-bridge
+# The settings' folder, /etc/shutter-rf-bridge, passed to the service as $CONFIGURATION_DIRECTORY.
+ConfigurationDirectory=shutter-rf-bridge
 ExecStart=/usr/bin/dotnet /opt/shutter-rf-bridge/ShutterRfBridge.dll
 Restart=on-failure
 RestartSec=10
