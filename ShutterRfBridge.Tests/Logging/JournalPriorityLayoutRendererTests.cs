@@ -1,4 +1,3 @@
-using System.Globalization;
 using NLog;
 using ShutterRfBridge.Logging;
 
@@ -16,8 +15,7 @@ public sealed class JournalPriorityLayoutRendererTests
     public void Render_Level_WritesItsJournalPriority(string level, string expectedPrefix)
     {
         var renderer = new JournalPriorityLayoutRenderer();
-        var logEvent =
-            LogEventInfo.Create(LogLevel.FromString(level), "logger", CultureInfo.InvariantCulture, "message");
+        var logEvent = new LogEventInfo { Level = LogLevel.FromString(level) };
 
         var prefix = renderer.Render(logEvent);
 

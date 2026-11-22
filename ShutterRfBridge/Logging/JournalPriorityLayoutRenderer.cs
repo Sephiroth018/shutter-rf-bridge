@@ -19,23 +19,12 @@ internal sealed class JournalPriorityLayoutRenderer : LayoutRenderer
         builder.Append(GetPrefix(logEvent.Level));
     }
 
-    private static string GetPrefix(LogLevel level)
+    private static string GetPrefix(LogLevel level) => level switch
     {
-        if (level >= LogLevel.Fatal)
-        {
-            return "<2>";
-        }
-
-        if (level >= LogLevel.Error)
-        {
-            return "<3>";
-        }
-
-        if (level >= LogLevel.Warn)
-        {
-            return "<4>";
-        }
-
-        return level >= LogLevel.Info ? "<6>" : "<7>";
-    }
+        _ when level >= LogLevel.Fatal => "<2>",
+        _ when level >= LogLevel.Error => "<3>",
+        _ when level >= LogLevel.Warn => "<4>",
+        _ when level >= LogLevel.Info => "<6>",
+        _ => "<7>"
+    };
 }
