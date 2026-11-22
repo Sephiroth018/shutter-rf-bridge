@@ -1,0 +1,23 @@
+[Unit]
+Description=Shutter RF bridge (sends the shutters' radio commands for the CCU)
+# Gives up after 5 failed starts in 5 minutes, so a wrong setting doesn't fill the log on the SD card.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=notify
+User=shutter-rf-bridge
+SupplementaryGroups=spi
+EnvironmentFile=/etc/default/shutter-rf-bridge
+ExecStart=/usr/bin/dotnet /opt/shutter-rf-bridge/ShutterRfBridge.dll
+Restart=on-failure
+RestartSec=10
+# NLog's folder, /var/log/shutter-rf-bridge, created for and owned by the service's user.
+LogsDirectory=shutter-rf-bridge
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
