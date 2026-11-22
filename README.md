@@ -69,7 +69,7 @@ restart the service. Put the `#` back afterwards, to spare the SD card.
 
 Uninstall while no shutter is moving, since stopping the service drops pending timed Stops (see
 [Update](#update)). The uninstall script stops the service and removes it, its program, its logs and
-its system user. It can be run again at any time, also on a Pi where the service is already gone:
+its system user, and is safe to run again:
 
 ```bash
 ~/shutter-rf-bridge/deploy/uninstall.sh

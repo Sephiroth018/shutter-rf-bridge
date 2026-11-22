@@ -37,11 +37,9 @@ fi
 sudo rm -rf "$install_dir" "$log_dir"
 
 # Removed after the service has stopped, since userdel refuses a user that still runs processes.
+# It also removes the user's own group, which deploy.sh created with it.
 if id "$service" &> /dev/null; then
   sudo userdel "$service"
-fi
-if getent group "$service" > /dev/null; then
-  sudo groupdel "$service"
 fi
 
 if $purge; then
