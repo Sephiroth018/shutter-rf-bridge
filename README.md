@@ -69,10 +69,11 @@ restart the service. Put the `#` back afterwards, to spare the SD card.
 
 Uninstall while no shutter is moving, since stopping the service drops pending timed Stops (see
 [Update](#update)). The uninstall script stops the service and removes it, its program, its logs and
-its system user, and is safe to run again:
+its system user, and is safe to run again. The block first pulls the clone, so it has the script
+that matches the latest install:
 
 ```bash
-~/shutter-rf-bridge/deploy/uninstall.sh
+git -C ~/shutter-rf-bridge pull --ff-only && ~/shutter-rf-bridge/deploy/uninstall.sh
 ```
 
 The settings are kept, so running the deploy script again reinstalls the service as it was. To
@@ -85,7 +86,7 @@ sudo cat /etc/default/shutter-rf-bridge
 Then run the script with `--purge`:
 
 ```bash
-~/shutter-rf-bridge/deploy/uninstall.sh --purge
+git -C ~/shutter-rf-bridge pull --ff-only && ~/shutter-rf-bridge/deploy/uninstall.sh --purge
 ```
 
 The clone with the scripts stays. Remove it last; a later install then starts again with

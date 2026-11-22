@@ -26,7 +26,8 @@ readonly purge
 
 if [[ -e $unit_file ]]; then
   sudo systemctl disable --now "$service"
-  sudo rm "$unit_file"
+  # Includes the drop-in overrides of 'systemctl edit', which would otherwise apply to a reinstall.
+  sudo rm -rf "$unit_file" "$unit_file.d"
   sudo systemctl daemon-reload
 fi
 # A unit that failed stays loaded after its file is gone, until its failed state is cleared.
