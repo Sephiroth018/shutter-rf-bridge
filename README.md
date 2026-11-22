@@ -53,7 +53,8 @@ the file explain each value. Once the service is installed, restart it after eve
 ### Update
 
 To update, run the deploy script again, while no shutter is moving: a restart drops pending timed
-Stops, so a shutter in a partial move would run to its end. After system updates, restart the
+Stops, so a shutter in a partial move would run to its end. Without new commits, it leaves the
+running service alone. After system updates, restart the
 service so it runs on the patched .NET.
 
 ### Logs

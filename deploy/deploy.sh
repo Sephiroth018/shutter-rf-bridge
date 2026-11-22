@@ -36,6 +36,15 @@ if [[ ! -e $environment_file ]]; then
   exit 0
 fi
 
+commit=$(git -C "$repository" rev-parse HEAD)
+readonly commit
+readonly deployed_commit_file=$install_dir/.deployed-commit
+# Skips the build and the restart, which would drop pending timed Stops, when nothing changed.
+if [[ -e $deployed_commit_file && $(< "$deployed_commit_file") == "$commit" ]] && systemctl is-active --quiet "$service"; then
+  echo "$service is already up to date."
+  exit 0
+fi
+
 publish_dir=$(mktemp --directory)
 trap 'rm -rf "$publish_dir"' EXIT
 dotnet publish "$repository/ShutterRfBridge" --configuration Release --runtime linux-arm64 --self-contained false --output "$publish_dir"
@@ -51,5 +60,6 @@ fi
 sudo rm -rf "$install_dir"
 sudo install --directory --mode=755 "$install_dir"
 sudo cp -r "$publish_dir/." "$install_dir/"
+echo "$commit" | sudo tee "$deployed_commit_file" > /dev/null
 sudo systemctl enable --now "$service"
 echo "$service is running."
