@@ -65,11 +65,11 @@ service so it runs on the patched .NET.
 
 ### Logs
 
-The service's own log is in `/var/log/shutter-rf-bridge`, written in batches (see
-[Logging](#logging)). To watch it live, remove the `//` in front of the `"NLog"` line in the
-settings file and restart the service. Put the `//` back afterwards, to spare the SD card.
 systemd's journal has the service's starts, stops and crashes, including a missing or wrong setting
-at startup.
+at startup. The service's own log (commands received and sent, errors) is in
+`/var/log/shutter-rf-bridge`, written in batches (see [Logging](#logging)). To watch it live, remove
+the `//` in front of the `"NLog"` line in the settings file and restart the service. Put the `//`
+back afterwards, to spare the SD card.
 
 ### Uninstall
 
@@ -169,9 +169,6 @@ The service answers:
 - **`403 Forbidden`** for a client that isn't in `Bridge:AllowedClients` (see
   [Configuration](#configuration)), whatever the path.
 
-Unknown paths and other methods get ASP.NET Core's usual `404` and `405`. Refused and rejected
-requests are logged as warnings.
-
 **Moves:**
 
 - **A move to a level between 1 and 999 is partial:** the service sends a Stop once its run time
@@ -183,8 +180,8 @@ requests are logged as warnings.
   above 32 767 ms arrive negative. The service reads negative values as unsigned, which allows run
   times up to 65 535 ms. Sent by hand, such a run time is negative too: 35 000 ms is `-30536`.
 
-**Queue:** the radio sends one command at a time, about 0.35 s each. A Stop, and a move for a shutter
-that is still moving, go ahead of the other queued moves. Any new command for a shutter cancels its
+**Queue:** the radio sends one command at a time, about 0.35 s each. A Stop, and a move for a
+shutter that is still moving, go ahead of the other queued moves. Any new command for a shutter cancels its
 pending timed Stop, and a Stop also removes the shutter's queued commands.
 
 To try it on the Pi itself, which the settings file allows by default, this moves the shutter on
@@ -202,8 +199,7 @@ The settings come from these sources, each overriding the ones before it:
    replaces it, so it isn't the place for changes.
 2. **`appsettings.Development.json`**, in the Development environment only.
 3. **`/etc/shutter-rf-bridge/appsettings.json`**, the settings file on the Pi (see
-   [Settings](#settings)). The service reads it when systemd passes its folder, so only when it
-   runs as the systemd service.
+   [Settings](#settings)), read only when the service runs under systemd.
 4. **Environment variables**, with `__` for each `:` in a setting's name
    (`Bridge__RemoteId`).
 
@@ -219,9 +215,8 @@ The service doesn't start if the remote ID is missing or too large, the allow-li
 entry isn't an IP address; the journal says which.
 
 **Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
-profile uses the Development environment, listening on `http://localhost:5080`. Development sends
-nothing over the radio and only logs what it would send. It uses a made-up remote ID, allows
-`127.0.0.1` and `::1`, and logs to the console.
+profile uses the Development environment, listening on `http://localhost:5080`. Development only
+logs what it would send over the radio, uses a made-up remote ID and allows `127.0.0.1` and `::1`.
 
 ## Logging
 
@@ -248,8 +243,7 @@ the settings file on the Pi, as described in NLog's
 
 **Under systemd**, the service can only write to `/var/log/shutter-rf-bridge`: the unit protects
 the rest of the file system. Logging to another folder needs a `ReadWritePaths=` entry for it in a
-drop-in (`sudo systemctl edit shutter-rf-bridge`). The service's log doesn't reach systemd's
-journal, which only has its starts, stops and crashes.
+drop-in (`sudo systemctl edit shutter-rf-bridge`).
 
 ## Build
 
