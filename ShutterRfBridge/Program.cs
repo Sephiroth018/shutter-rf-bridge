@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 builder.Logging.ClearProviders();
 builder.Host.UseNLog(new NLogAspNetCoreOptions { ShutdownOnDispose = true });
 
-// Tells systemd when the service is ready and handles its stop signal; does nothing outside systemd.
+// Tells systemd once the host has started and handles its stop signal; does nothing outside systemd.
 builder.Services.AddSystemd();
 
 builder.Services.AddControllers();
