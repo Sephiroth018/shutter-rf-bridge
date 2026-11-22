@@ -127,6 +127,20 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
         ReceivedWarning();
     }
 
+    [Fact]
+    public async Task StoppingAsync_WorkerFailed_LogsNoWait()
+    {
+        var execution = await StartFailingWorker();
+        _queue.Enqueue(PartialMove);
+        await Assert.ThrowsAsync<ArgumentException>(() => execution.WaitAsync(TransmitTimeout, _cancellationToken));
+
+        await _worker.StoppingAsync(_cancellationToken).WaitAsync(TransmitTimeout, _cancellationToken);
+
+        // Read from the received calls: an assertion call to Log at Information trips CA1873.
+        Assert.DoesNotContain(_logger.ReceivedCalls(), call =>
+            call.GetMethodInfo().Name == nameof(ILogger.Log) && call.GetArguments() is [LogLevel.Information, ..]);
+    }
+
     /// <summary>Starts the worker with a transmitter that throws a bug's exception; returns the worker's loop.</summary>
     private async Task<Task> StartFailingWorker()
     {

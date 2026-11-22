@@ -46,10 +46,10 @@ internal sealed partial class TransmitWorker : BackgroundService, IHostedLifecyc
         }
 
         var nothingPending = _queue.WaitForPendingCommandsAsync(cancellationToken);
-        if (!nothingPending.IsCompleted)
+        // A failed worker sends nothing more, so waiting for the queue would only run into the timeout.
+        if (!nothingPending.IsCompleted && !ExecuteTask.IsCompleted)
         {
             LogWaitingForPendingCommands();
-            // A failed worker sends nothing more, so waiting for the queue would only run into the timeout.
             await Task.WhenAny(nothingPending, ExecuteTask);
         }
 
