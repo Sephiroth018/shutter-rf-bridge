@@ -27,7 +27,7 @@ command -v dotnet > /dev/null || fail "the .NET SDK is missing; install it as th
 getent group spi > /dev/null || fail "the group 'spi' is missing; it comes with Raspberry Pi OS."
 
 if ! id "$service" &> /dev/null; then
-  sudo useradd --system --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin "$service"
+  sudo useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin "$service"
 fi
 
 if [[ ! -e $environment_file ]]; then

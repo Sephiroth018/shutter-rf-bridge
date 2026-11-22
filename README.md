@@ -11,10 +11,10 @@ whole, over SSH or in a terminal over RDP.
 
 ### .NET SDK
 
-From Microsoft's package repository, so the system's updates keep .NET patched:
+From Microsoft's package repository, so the system's updates keep .NET patched, together with git:
 
 ```bash
-wget -q https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb && sudo dpkg -i /tmp/packages-microsoft-prod.deb && rm /tmp/packages-microsoft-prod.deb && sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0
+wget -q https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb && sudo dpkg -i /tmp/packages-microsoft-prod.deb && rm /tmp/packages-microsoft-prod.deb && sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0 git
 ```
 
 If SPI isn't on yet, turn it on; the Pi restarts:
