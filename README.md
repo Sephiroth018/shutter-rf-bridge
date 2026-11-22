@@ -22,8 +22,7 @@ and offers them as an HTTP API, which CUxD devices on the CCU3 call.
 
 ## Install on the Raspberry Pi
 
-The service runs as the systemd service `shutter-rf-bridge`. Run each block as a whole, over SSH or
-in a terminal over RDP.
+The service runs as the systemd service `shutter-rf-bridge`. Run each block as a whole.
 
 ### First install
 
