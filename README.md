@@ -251,6 +251,8 @@ ASP.NET Core's own entries below warning level are left out, to spare the SD car
   first; errors are written at once.
 - **Console:** every entry is also written to the console at once, as one line that starts with its
   level. Under systemd, the lines go to the journal, each with its level as the journal's priority.
+  Raspberry Pi OS keeps the journal in memory; on a system that stores it on the SD card, these
+  lines are written there unbuffered.
 - **Development** logs to the console only, with the time and without the priority.
 
 NLog is configured in the `NLog` section of the settings. To change it, override that section in
