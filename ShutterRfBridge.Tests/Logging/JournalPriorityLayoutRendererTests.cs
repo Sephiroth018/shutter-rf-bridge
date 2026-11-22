@@ -5,17 +5,22 @@ namespace ShutterRfBridge.Tests.Logging;
 
 public sealed class JournalPriorityLayoutRendererTests
 {
+    public static TheoryData<LogLevel, string> JournalPriorities => new()
+    {
+        { LogLevel.Fatal, "<2>" },
+        { LogLevel.Error, "<3>" },
+        { LogLevel.Warn, "<4>" },
+        { LogLevel.Info, "<6>" },
+        { LogLevel.Debug, "<7>" },
+        { LogLevel.Trace, "<7>" }
+    };
+
     [Theory]
-    [InlineData("Fatal", "<2>")]
-    [InlineData("Error", "<3>")]
-    [InlineData("Warn", "<4>")]
-    [InlineData("Info", "<6>")]
-    [InlineData("Debug", "<7>")]
-    [InlineData("Trace", "<7>")]
-    public void Render_Level_WritesItsJournalPriority(string level, string expectedPrefix)
+    [MemberData(nameof(JournalPriorities))]
+    public void Render_Level_WritesItsJournalPriority(LogLevel level, string expectedPrefix)
     {
         var renderer = new JournalPriorityLayoutRenderer();
-        var logEvent = new LogEventInfo { Level = LogLevel.FromString(level) };
+        var logEvent = new LogEventInfo { Level = level };
 
         var prefix = renderer.Render(logEvent);
 
