@@ -32,9 +32,8 @@ if ! id "$service" &> /dev/null; then
 fi
 
 if [[ ! -e $settings_file ]]; then
-  # Created here, since systemd creates the unit's ConfigurationDirectory= only when the service starts.
-  sudo install --directory --mode=755 "$settings_dir"
-  sudo install --mode=640 --owner=root --group="$service" "$repository/deploy/appsettings.json" "$settings_file"
+  # Creates the folder too, since systemd creates the unit's ConfigurationDirectory= only when the service starts.
+  sudo install -D --mode=640 --owner=root --group="$service" "$repository/deploy/appsettings.json" "$settings_file"
   echo "Created $settings_file. Fill in the house values, then run this script again."
   exit 0
 fi

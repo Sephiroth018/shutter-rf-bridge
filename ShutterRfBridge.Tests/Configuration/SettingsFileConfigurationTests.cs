@@ -69,24 +69,13 @@ public sealed class SettingsFileConfigurationTests : IDisposable
     [Fact]
     public void AddSettingsFile_DeployTemplate_ReadsItsCommentedJson()
     {
-        var deployDirectory = Path.Combine(FindRepository().FullName, "deploy");
+        // Copied into the tests' output by the test project.
+        var deployDirectory = Path.Combine(AppContext.BaseDirectory, "deploy");
         using var configuration = CreateServiceConfiguration();
 
         configuration.AddSettingsFile(deployDirectory);
 
         Assert.Equal("http://0.0.0.0:5080", configuration["Urls"]);
-    }
-
-    private static DirectoryInfo FindRepository()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (!File.Exists(Path.Combine(directory.FullName, "ShutterRfBridge.slnx")))
-        {
-            directory = directory.Parent ??
-                        throw new DirectoryNotFoundException("The tests run outside the repository.");
-        }
-
-        return directory;
     }
 
     /// <summary>The configuration sources the service's own builder has, with the built-in files from the test's folder.</summary>
