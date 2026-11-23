@@ -43,6 +43,7 @@ public sealed class WeatherOptionsValidatorTests
     [InlineData(-91, 13.5, "Weather:Location:Latitude -91 is outside -90 to 90.")]
     [InlineData(47.5, 181, "Weather:Location:Longitude 181 is outside -180 to 180.")]
     [InlineData(47.5, -181, "Weather:Location:Longitude -181 is outside -180 to 180.")]
+    [InlineData(double.NaN, 13.5, "Weather:Location:Latitude NaN is outside -90 to 90.")]
     public void Validate_CoordinateOutOfRange_FailsNamingIt(double latitude, double longitude, string failure)
     {
         var result = _validator.Validate(null, Options(new Coordinates { Latitude = latitude, Longitude = longitude }));

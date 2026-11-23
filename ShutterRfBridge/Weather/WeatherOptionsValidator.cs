@@ -30,7 +30,7 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
         coordinate switch
         {
             null => $"{LocationKey}:{coordinateName} is missing.",
-            { } degrees when Math.Abs(degrees) > max =>
+            { } degrees when !double.IsFinite(degrees) || Math.Abs(degrees) > max =>
                 $"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}.",
             _ => null
         };
