@@ -67,7 +67,6 @@ public sealed class WeatherOptionsValidatorTests
     [InlineData("v1/", "Weather:ApiAddress 'v1/' isn't an absolute http or https address.")]
     [InlineData("ftp://example.com/v1/",
         "Weather:ApiAddress 'ftp://example.com/v1/' isn't an absolute http or https address.")]
-    [InlineData("https://example.com/v1", "Weather:ApiAddress 'https://example.com/v1' doesn't end with a slash.")]
     public void Validate_InvalidApiAddress_FailsNamingIt(string address, string failure)
     {
         var result = _validator.Validate(null,

@@ -42,7 +42,6 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
         null => $"{ApiAddressKey} is missing.",
         { IsAbsoluteUri: false } or { Scheme: not ("https" or "http") } =>
             $"{ApiAddressKey} '{address}' isn't an absolute http or https address.",
-        _ when !address.AbsolutePath.EndsWith('/') => $"{ApiAddressKey} '{address}' doesn't end with a slash.",
         _ => null
     };
 

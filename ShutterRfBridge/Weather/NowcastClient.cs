@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
+using Flurl;
+using Microsoft.Extensions.Options;
 
 namespace ShutterRfBridge.Weather;
 
@@ -16,12 +18,14 @@ public class NowcastClient
         RespectRequiredConstructorParameters = true
     };
 
+    private readonly Uri _apiAddress;
     private readonly HttpClient _httpClient;
 
-    /// <param name="httpClient">A client whose base address is <see cref="WeatherOptions.ApiAddress" />.</param>
-    public NowcastClient(HttpClient httpClient)
+    public NowcastClient(HttpClient httpClient, IOptions<WeatherOptions> options)
     {
         _httpClient = httpClient;
+        _apiAddress = options.Value.ApiAddress
+                      ?? throw new InvalidOperationException($"{nameof(WeatherOptions.ApiAddress)} isn't set.");
     }
 
     /// <summary>
@@ -38,9 +42,13 @@ public class NowcastClient
         CancellationToken cancellationToken)
     {
         var time = stepTime.UtcDateTime.ToString(StepTimeFormat, CultureInfo.InvariantCulture);
-        var path = string.Create(CultureInfo.InvariantCulture,
-            $"timeseries/forecast/nowcast-v1-15min-1km?parameters=rr&lat_lon={latitude},{longitude}&start={time}&end={time}");
-        var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(path, JsonOptions, cancellationToken)
+        var url = new Url(_apiAddress)
+            .AppendPathSegments("timeseries", "forecast", "nowcast-v1-15min-1km")
+            .SetQueryParam("parameters", "rr")
+            .SetQueryParam("lat_lon", string.Create(CultureInfo.InvariantCulture, $"{latitude},{longitude}"))
+            .SetQueryParam("start", time)
+            .SetQueryParam("end", time);
+        var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url.ToUri(), JsonOptions, cancellationToken)
                        ?? throw new JsonException("The nowcast response is null.");
         return response.ToNowcast();
     }

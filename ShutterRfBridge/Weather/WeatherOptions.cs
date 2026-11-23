@@ -5,7 +5,7 @@ public class WeatherOptions
 {
     public const string SectionName = "Weather";
 
-    /// <summary>GeoSphere's Dataset API, with a trailing slash so the dataset paths append to it.</summary>
+    /// <summary>GeoSphere's Dataset API, which the nowcast's dataset path is appended to.</summary>
     public Uri? ApiAddress { get; init; }
 
     /// <summary>The house's location; with neither coordinate set, the rain is always unknown.</summary>
