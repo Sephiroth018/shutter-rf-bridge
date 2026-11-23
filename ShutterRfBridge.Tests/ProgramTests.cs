@@ -22,6 +22,19 @@ public sealed class ProgramTests : IAsyncDisposable
         await Assert.ThrowsAsync<OptionsValidationException>(() => _application.PostAsync("/shutters/3/stop"));
     }
 
+    [Theory]
+    [InlineData("Weather:Location:Longitude", "")]
+    [InlineData("Weather:Location:Latitude", "91")]
+    [InlineData("Weather:ApiAddress", "")]
+    [InlineData("Weather:StalenessLimit", "00:00:00")]
+    [InlineData("Weather:RequestTimeout", "-00:00:01")]
+    public async Task Main_InvalidWeatherSetting_FailsTheStartup(string key, string value)
+    {
+        _application.SetSetting(key, value);
+
+        await Assert.ThrowsAsync<OptionsValidationException>(() => _application.PostAsync("/shutters/3/stop"));
+    }
+
     [Fact]
     public void Main_AnyWorkingDirectory_ReadsConfigurationFromTheProgramsFolder()
     {
