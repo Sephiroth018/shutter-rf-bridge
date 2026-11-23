@@ -6,8 +6,8 @@ namespace ShutterRfBridge.Weather;
 /// <summary>Fetches GeoSphere Austria's rain nowcast (dataset <c>nowcast-v1-15min-1km</c>) for one point and one step.</summary>
 public class NowcastClient
 {
-    // The API's start and end format, in UTC.
-    private const string StepTimeFormat = "yyyy-MM-ddTHH:mm";
+    // ISO 8601 in UTC, which the API takes for start and end.
+    private const string StepTimeFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static readonly Uri BaseAddress = new("https://dataset.api.hub.geosphere.at/v1/");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
