@@ -13,7 +13,6 @@ public sealed class TransmitQueueTests : IDisposable
 
     private readonly CancellationToken _cancellationToken = TestContext.Current.CancellationToken;
     private readonly TransmitQueue _queue;
-    private readonly List<Action> _runTimeEnds = [];
     private readonly FakeTimeProvider _time = new();
 
     public TransmitQueueTests()
@@ -200,13 +199,13 @@ public sealed class TransmitQueueTests : IDisposable
     [Fact]
     public async Task Enqueue_CommandForMovingChannelBeforeItsRunTimeEndRuns_KeepsTheCommand()
     {
-        using var queue = QueueWithInFlightRunTimeEnds();
+        using var queue = QueueWithInFlightRunTimeEnds(out var runTimeEnds);
         queue.Enqueue(PartialMove(3));
         await queue.DequeueAsync(_cancellationToken);
         var newMove = PartialMove(3);
         queue.Enqueue(newMove);
 
-        _runTimeEnds[0]();
+        runTimeEnds[0]();
 
         Assert.Equal(newMove, await queue.DequeueAsync(_cancellationToken));
     }
@@ -214,13 +213,13 @@ public sealed class TransmitQueueTests : IDisposable
     [Fact]
     public async Task DequeueAsync_SecondMoveForChannelBeforeTheFirstsRunTimeEndRuns_KeepsTheChannelMoving()
     {
-        using var queue = QueueWithInFlightRunTimeEnds();
+        using var queue = QueueWithInFlightRunTimeEnds(out var runTimeEnds);
         queue.Enqueue(PartialMove(3));
         queue.Enqueue(PartialMove(3));
         await queue.DequeueAsync(_cancellationToken);
         await queue.DequeueAsync(_cancellationToken);
 
-        _runTimeEnds[0]();
+        runTimeEnds[0]();
 
         Assert.False(queue.DequeueAsync(_cancellationToken).IsCompleted);
     }
@@ -228,19 +227,21 @@ public sealed class TransmitQueueTests : IDisposable
     private static ShutterMove PartialMove(int channel) => new(channel, RemoteCommand.Up, 500, RunTime);
 
     /// <summary>
-    ///     A queue whose run time ends a test runs by hand from <see cref="_runTimeEnds" />, also after their timer was
-    ///     disposed: <see cref="FakeTimeProvider" /> never fires a disposed timer, so it can't replay a callback that was
-    ///     already running when a newer command ended the movement.
+    ///     A queue whose run time ends a test runs by hand from <paramref name="runTimeEnds" />, also after their timer
+    ///     was disposed: <see cref="FakeTimeProvider" /> never fires a disposed timer, so it can't replay a callback that
+    ///     was already running when a newer command ended the movement.
     /// </summary>
-    private TransmitQueue QueueWithInFlightRunTimeEnds()
+    private static TransmitQueue QueueWithInFlightRunTimeEnds(out IReadOnlyList<Action> runTimeEnds)
     {
+        var ends = new List<Action>();
+        runTimeEnds = ends;
         var clock = Substitute.For<TimeProvider>();
         clock.CreateTimer(Arg.Any<TimerCallback>(), Arg.Any<object?>(), Arg.Any<TimeSpan>(), Arg.Any<TimeSpan>())
             .Returns(call =>
             {
                 var callback = call.ArgAt<TimerCallback>(0);
                 var state = call.ArgAt<object?>(1);
-                _runTimeEnds.Add(() => callback(state));
+                ends.Add(() => callback(state));
                 return Substitute.For<ITimer>();
             });
         return new TransmitQueue(clock, NullLogger<TransmitQueue>.Instance);
