@@ -6,6 +6,7 @@ using ShutterRfBridge.Configuration;
 using ShutterRfBridge.Logging;
 using ShutterRfBridge.Radio;
 using ShutterRfBridge.Transmission;
+using ShutterRfBridge.Weather;
 
 // The config files sit next to the program, whatever folder it is started from.
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -27,6 +28,8 @@ builder.Services.AddSystemd();
 builder.Services.AddControllers();
 builder.Services.AddOptions<BridgeOptions>().BindConfiguration(BridgeOptions.SectionName).ValidateOnStart();
 builder.Services.AddSingleton<IValidateOptions<BridgeOptions>, BridgeOptionsValidator>();
+builder.Services.AddOptions<WeatherOptions>().BindConfiguration(WeatherOptions.SectionName).ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<WeatherOptions>, WeatherOptionsValidator>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<TransmitQueue>();
 builder.Services.AddHostedService<TransmitWorker>();
