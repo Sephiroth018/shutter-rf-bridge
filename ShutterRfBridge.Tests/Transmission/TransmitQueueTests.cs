@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using ShutterRfBridge.Remote;
-using ShutterRfBridge.Tests.TestSupport;
 using ShutterRfBridge.Transmission;
 
 namespace ShutterRfBridge.Tests.Transmission;
@@ -9,14 +9,16 @@ namespace ShutterRfBridge.Tests.Transmission;
 public sealed class TransmitQueueTests : IDisposable
 {
     private static readonly TimeSpan RunTime = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan JustBeforeRunTime = RunTime - TimeSpan.FromMilliseconds(1);
 
     private readonly CancellationToken _cancellationToken = TestContext.Current.CancellationToken;
     private readonly TransmitQueue _queue;
-    private readonly TimeProviderSubstitute _time = new();
+    private readonly List<Action> _runTimeEnds = [];
+    private readonly FakeTimeProvider _time = new();
 
     public TransmitQueueTests()
     {
-        _queue = new TransmitQueue(_time.TimeProvider, Substitute.For<ILogger<TransmitQueue>>());
+        _queue = new TransmitQueue(_time, NullLogger<TransmitQueue>.Instance);
     }
 
     public void Dispose()
@@ -89,13 +91,14 @@ public sealed class TransmitQueueTests : IDisposable
     }
 
     [Fact]
-    public async Task DequeueAsync_Move_StartsATimerForItsRunTime()
+    public async Task DequeueAsync_PartialMoveRunTimeNotEnded_ReturnsNothing()
     {
         _queue.Enqueue(PartialMove(3));
-
         await Dequeue();
 
-        Assert.Equal(RunTime, Assert.Single(_time.Timers).DueTime);
+        _time.Advance(JustBeforeRunTime);
+
+        Assert.False(_queue.DequeueAsync(_cancellationToken).IsCompleted);
     }
 
     [Fact]
@@ -104,9 +107,22 @@ public sealed class TransmitQueueTests : IDisposable
         _queue.Enqueue(PartialMove(3));
         await Dequeue();
 
-        _time.Timers[0].Fire();
+        _time.Advance(RunTime);
 
         Assert.Equal(new ShutterStop(3), await Dequeue());
+    }
+
+    [Fact]
+    public async Task DequeueAsync_PartialMoveRunTimeLongEnded_ReturnsOnlyOneStop()
+    {
+        _queue.Enqueue(PartialMove(3));
+        await Dequeue();
+        _time.Advance(RunTime);
+        await Dequeue();
+
+        _time.Advance(RunTime);
+
+        Assert.False(_queue.DequeueAsync(_cancellationToken).IsCompleted);
     }
 
     [Theory]
@@ -117,7 +133,7 @@ public sealed class TransmitQueueTests : IDisposable
         _queue.Enqueue(new ShutterMove(3, RemoteCommand.Up, level, RunTime));
         await Dequeue();
 
-        _time.Timers[0].Fire();
+        _time.Advance(RunTime);
 
         Assert.False(_queue.DequeueAsync(_cancellationToken).IsCompleted);
     }
@@ -130,9 +146,8 @@ public sealed class TransmitQueueTests : IDisposable
         var newMove = PartialMove(3);
 
         _queue.Enqueue(newMove);
-        _time.Timers[0].Fire();
+        _time.Advance(RunTime);
 
-        _time.Timers[0].Timer.Received().Dispose();
         Assert.Equal(newMove, await Dequeue());
         Assert.False(_queue.DequeueAsync(_cancellationToken).IsCompleted);
     }
@@ -169,18 +184,67 @@ public sealed class TransmitQueueTests : IDisposable
     [Fact]
     public async Task DequeueAsync_SecondMoveForChannel_CancelsTheFirstMovesTimedStop()
     {
+        var halfRunTime = RunTime / 2;
         _queue.Enqueue(PartialMove(3));
         _queue.Enqueue(PartialMove(3));
         await Dequeue();
+        _time.Advance(halfRunTime);
 
         await Dequeue();
-        _time.Timers[0].Fire();
+        // The first move's run time is over, the second's isn't.
+        _time.Advance(halfRunTime);
 
-        _time.Timers[0].Timer.Received().Dispose();
         Assert.False(_queue.DequeueAsync(_cancellationToken).IsCompleted);
     }
 
+    [Fact]
+    public async Task Enqueue_CommandForMovingChannelBeforeItsRunTimeEndRuns_KeepsTheCommand()
+    {
+        using var queue = QueueWithInFlightRunTimeEnds();
+        queue.Enqueue(PartialMove(3));
+        await queue.DequeueAsync(_cancellationToken);
+        var newMove = PartialMove(3);
+        queue.Enqueue(newMove);
+
+        _runTimeEnds[0]();
+
+        Assert.Equal(newMove, await queue.DequeueAsync(_cancellationToken));
+    }
+
+    [Fact]
+    public async Task DequeueAsync_SecondMoveForChannelBeforeTheFirstsRunTimeEndRuns_KeepsTheChannelMoving()
+    {
+        using var queue = QueueWithInFlightRunTimeEnds();
+        queue.Enqueue(PartialMove(3));
+        queue.Enqueue(PartialMove(3));
+        await queue.DequeueAsync(_cancellationToken);
+        await queue.DequeueAsync(_cancellationToken);
+
+        _runTimeEnds[0]();
+
+        Assert.False(queue.DequeueAsync(_cancellationToken).IsCompleted);
+    }
+
     private static ShutterMove PartialMove(int channel) => new(channel, RemoteCommand.Up, 500, RunTime);
+
+    /// <summary>
+    ///     A queue whose run time ends a test runs by hand from <see cref="_runTimeEnds" />, also after their timer was
+    ///     disposed: <see cref="FakeTimeProvider" /> never fires a disposed timer, so it can't replay a callback that was
+    ///     already running when a newer command ended the movement.
+    /// </summary>
+    private TransmitQueue QueueWithInFlightRunTimeEnds()
+    {
+        var clock = Substitute.For<TimeProvider>();
+        clock.CreateTimer(Arg.Any<TimerCallback>(), Arg.Any<object?>(), Arg.Any<TimeSpan>(), Arg.Any<TimeSpan>())
+            .Returns(call =>
+            {
+                var callback = call.ArgAt<TimerCallback>(0);
+                var state = call.ArgAt<object?>(1);
+                _runTimeEnds.Add(() => callback(state));
+                return Substitute.For<ITimer>();
+            });
+        return new TransmitQueue(clock, NullLogger<TransmitQueue>.Instance);
+    }
 
     private Task<ShutterCommand> Dequeue() => _queue.DequeueAsync(_cancellationToken);
 }

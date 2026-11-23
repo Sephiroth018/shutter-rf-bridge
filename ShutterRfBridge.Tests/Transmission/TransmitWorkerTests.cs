@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using ShutterRfBridge.Configuration;
 using ShutterRfBridge.Radio;
@@ -15,17 +18,14 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
     private static readonly TimeSpan TransmitTimeout = TimeSpan.FromSeconds(10);
 
     private readonly CancellationToken _cancellationToken = TestContext.Current.CancellationToken;
-    private readonly ILogger<TransmitWorker> _logger = Substitute.For<ILogger<TransmitWorker>>();
-    private readonly TransmitQueue _queue;
+    private readonly FakeLogger<TransmitWorker> _logger = new();
+    private readonly TransmitQueue _queue = new(new FakeTimeProvider(), NullLogger<TransmitQueue>.Instance);
     private readonly TaskCompletionSource<RemoteFrame> _transmitted = new();
     private readonly IRemoteTransmitter _transmitter = Substitute.For<IRemoteTransmitter>();
     private readonly TransmitWorker _worker;
 
     public TransmitWorkerTests()
     {
-        _queue = new TransmitQueue(new TimeProviderSubstitute().TimeProvider,
-            Substitute.For<ILogger<TransmitQueue>>());
-        _logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
         var options = Options.Create(new BridgeOptions { RemoteId = MadeUpRemote.Id, AllowedClients = ["::1"] });
         _worker = new TransmitWorker(_queue, _transmitter, options, _logger);
     }
@@ -63,8 +63,8 @@ public sealed class TransmitWorkerTests : IAsyncDisposable
         _queue.Enqueue(new ShutterStop(2));
 
         await _transmitted.Task.WaitAsync(TransmitTimeout, _cancellationToken);
-        _logger.Received(1).Log(LogLevel.Error, Arg.Any<EventId>(), Arg.Any<Arg.AnyType>(),
-            Arg.Any<TransmitException>(), Arg.Any<Func<Arg.AnyType, Exception?, string>>());
+        var error = Assert.Single(_logger.Collector.GetSnapshot(), log => log.Level == LogLevel.Error);
+        Assert.IsType<TransmitException>(error.Exception);
     }
 
     [Fact]
