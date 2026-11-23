@@ -5,5 +5,7 @@ internal sealed record RainUnknown(string Reason) : RainReport
 {
     public const string Answer = "unknown";
 
+    public override RainCondition Condition => RainCondition.Unknown;
+
     public override string ToAnswer() => Answer;
 }

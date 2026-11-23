@@ -30,6 +30,15 @@ builder.Services.AddOptions<BridgeOptions>().BindConfiguration(BridgeOptions.Sec
 builder.Services.AddSingleton<IValidateOptions<BridgeOptions>, BridgeOptionsValidator>();
 builder.Services.AddOptions<WeatherOptions>().BindConfiguration(WeatherOptions.SectionName).ValidateOnStart();
 builder.Services.AddSingleton<IValidateOptions<WeatherOptions>, WeatherOptionsValidator>();
+builder.Services.AddHttpClient<NowcastClient>((services, client) =>
+    {
+        client.BaseAddress = NowcastClient.BaseAddress;
+        client.Timeout = services.GetRequiredService<IOptions<WeatherOptions>>().Value.RequestTimeout;
+    })
+    // Its default logging writes every request at info level, which would reach the SD card every 15 minutes.
+    .RemoveAllLoggers();
+builder.Services.AddTransient<RainReporter>();
+builder.Services.AddSingleton<RainReportLog>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<TransmitQueue>();
 builder.Services.AddHostedService<TransmitWorker>();
@@ -48,6 +57,7 @@ var app = builder.Build();
 app.UseMiddleware<ClientAllowListMiddleware>();
 app.UseMiddleware<RejectedRequestLoggingMiddleware>();
 app.MapControllers();
+app.MapRainEndpoint();
 
 // A failed background service stops the host, which still ends with exit code 0; systemd restarts on a non-zero one.
 // Resolved before running, since the host disposes its services when it stops.
