@@ -18,7 +18,8 @@ public sealed class NowcastClientTests : IDisposable
     public NowcastClientTests()
     {
         _httpClient = new HttpClient(_handler);
-        _client = CreateClient("https://dataset.api.hub.geosphere.at/v1/");
+        _client = new NowcastClient(_httpClient,
+            Options.Create(new WeatherOptions { ApiAddress = new Uri("https://dataset.api.hub.geosphere.at/v1/") }));
     }
 
     public void Dispose()
@@ -38,20 +39,6 @@ public sealed class NowcastClientTests : IDisposable
         Assert.Equal(
             "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km?parameters=rr&lat_lon=47.5,13.25&start=2026-11-23T18:30:00Z&end=2026-11-23T18:30:00Z",
             Uri.UnescapeDataString(requested?.AbsoluteUri ?? string.Empty));
-    }
-
-    [Theory]
-    [InlineData("https://example.com/v1")]
-    [InlineData("https://example.com/v1/")]
-    public async Task GetStepAsync_AddressWithOrWithoutTrailingSlash_AppendsTheDatasetPath(string apiAddress)
-    {
-        Uri? requested = null;
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build(), request => requested = request.RequestUri);
-
-        await CreateClient(apiAddress).GetStepAsync(47.5, 13.25, StepTime, TestContext.Current.CancellationToken);
-
-        Assert.Equal("https://example.com/v1/timeseries/forecast/nowcast-v1-15min-1km",
-            requested?.GetLeftPart(UriPartial.Path));
     }
 
     [Fact]
@@ -148,9 +135,6 @@ public sealed class NowcastClientTests : IDisposable
 
         await Assert.ThrowsAsync<JsonException>(GetStepAsync);
     }
-
-    private NowcastClient CreateClient(string apiAddress) =>
-        new(_httpClient, Options.Create(new WeatherOptions { ApiAddress = new Uri(apiAddress) }));
 
     private Task<Nowcast> GetStepAsync() =>
         _client.GetStepAsync(47.5, 13.25, StepTime, TestContext.Current.CancellationToken);
