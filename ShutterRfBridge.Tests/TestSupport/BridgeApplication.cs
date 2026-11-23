@@ -39,28 +39,22 @@ internal sealed class BridgeApplication : WebApplicationFactory<Program>
     }
 
     /// <summary>Sends a <c>POST</c> without a body from <paramref name="client" /> and returns the status code.</summary>
-    public async Task<int> PostAsync(string path, IPAddress? client)
-    {
-        var context = await Server.SendAsync(request =>
-        {
-            request.Request.Method = HttpMethods.Post;
-            request.Request.Path = path;
-            request.Connection.RemoteIpAddress = client;
-        }, TestContext.Current.CancellationToken);
-        return context.Response.StatusCode;
-    }
+    public async Task<int> PostAsync(string path, IPAddress? client) =>
+        (await SendAsync(HttpMethods.Post, path, client)).StatusCode;
 
     /// <inheritdoc cref="PostAsync(string, IPAddress?)" />
     public Task<int> PostAsync(string path) => PostAsync(path, IPAddress.Loopback);
 
     /// <summary>Sends a <c>GET</c> from localhost and returns the response.</summary>
-    public async Task<HttpResponse> GetAsync(string path)
+    public Task<HttpResponse> GetAsync(string path) => SendAsync(HttpMethods.Get, path, IPAddress.Loopback);
+
+    private async Task<HttpResponse> SendAsync(string method, string path, IPAddress? client)
     {
         var context = await Server.SendAsync(request =>
         {
-            request.Request.Method = HttpMethods.Get;
+            request.Request.Method = method;
             request.Request.Path = path;
-            request.Connection.RemoteIpAddress = IPAddress.Loopback;
+            request.Connection.RemoteIpAddress = client;
         }, TestContext.Current.CancellationToken);
         return context.Response;
     }

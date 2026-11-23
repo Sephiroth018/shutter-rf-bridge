@@ -12,37 +12,29 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
 
     public ValidateOptionsResult Validate(string? name, WeatherOptions options)
     {
-        List<string> failures = [];
+        List<string?> failures = [];
         if (options.Location is { } location && (location.Latitude is not null || location.Longitude is not null))
         {
-            failures.AddRange(ValidateCoordinate(nameof(Coordinates.Latitude), location.Latitude,
-                Coordinates.MaxLatitude));
-            failures.AddRange(ValidateCoordinate(nameof(Coordinates.Longitude), location.Longitude,
+            failures.Add(ValidateCoordinate(nameof(Coordinates.Latitude), location.Latitude, Coordinates.MaxLatitude));
+            failures.Add(ValidateCoordinate(nameof(Coordinates.Longitude), location.Longitude,
                 Coordinates.MaxLongitude));
         }
 
-        failures.AddRange(ValidatePositive(nameof(WeatherOptions.StalenessLimit), options.StalenessLimit));
-        failures.AddRange(ValidatePositive(nameof(WeatherOptions.RequestTimeout), options.RequestTimeout));
-        return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
+        failures.Add(ValidatePositive(nameof(WeatherOptions.StalenessLimit), options.StalenessLimit));
+        failures.Add(ValidatePositive(nameof(WeatherOptions.RequestTimeout), options.RequestTimeout));
+        var messages = failures.OfType<string>().ToList();
+        return messages.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(messages);
     }
 
-    private static IEnumerable<string> ValidateCoordinate(string coordinateName, double? coordinate, double max)
-    {
-        if (coordinate is not { } degrees)
+    private static string? ValidateCoordinate(string coordinateName, double? coordinate, double max) =>
+        coordinate switch
         {
-            yield return $"{LocationKey}:{coordinateName} is missing.";
-        }
-        else if (Math.Abs(degrees) > max)
-        {
-            yield return $"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}.";
-        }
-    }
+            null => $"{LocationKey}:{coordinateName} is missing.",
+            { } degrees when Math.Abs(degrees) > max =>
+                $"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}.",
+            _ => null
+        };
 
-    private static IEnumerable<string> ValidatePositive(string limitName, TimeSpan limit)
-    {
-        if (limit <= TimeSpan.Zero)
-        {
-            yield return $"{WeatherOptions.SectionName}:{limitName} must be positive.";
-        }
-    }
+    private static string? ValidatePositive(string limitName, TimeSpan limit) =>
+        limit <= TimeSpan.Zero ? $"{WeatherOptions.SectionName}:{limitName} must be positive." : null;
 }

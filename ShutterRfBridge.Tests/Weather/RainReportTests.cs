@@ -13,7 +13,7 @@ public sealed class RainReportTests
     [InlineData(0.3)]
     public void From_CurrentStep_ReturnsItsAmount(double millimetres)
     {
-        var nowcast = new Nowcast(ReferenceTime, [new NowcastStep(StepTime, millimetres)]);
+        var nowcast = new Nowcast(ReferenceTime, new NowcastStep(StepTime, millimetres));
 
         var report = RainReport.From(nowcast, StepTime, StalenessLimit);
 
@@ -26,8 +26,7 @@ public sealed class RainReportTests
     [InlineData(14.999)]
     public void From_TimeWithinTheStep_ReturnsThatStepsAmount(double minutesIntoStep)
     {
-        var nowcast = new Nowcast(ReferenceTime,
-            [new NowcastStep(StepTime.AddMinutes(-15), 0.1), new NowcastStep(StepTime, 0.3)]);
+        var nowcast = new Nowcast(ReferenceTime, new NowcastStep(StepTime, 0.3));
 
         var report = RainReport.From(nowcast, StepTime.AddMinutes(minutesIntoStep), StalenessLimit);
 
@@ -35,9 +34,19 @@ public sealed class RainReportTests
     }
 
     [Fact]
+    public void From_StepOfAnotherTime_ReturnsUnknownNamingTheCurrentStep()
+    {
+        var nowcast = new Nowcast(ReferenceTime, new NowcastStep(StepTime, 0.3));
+
+        var report = RainReport.From(nowcast, StepTime.AddMinutes(15), StalenessLimit);
+
+        Assert.Equal(new RainUnknown("the nowcast has no value for 2026-11-23 18:45:00Z"), report);
+    }
+
+    [Fact]
     public void From_RunExactlyAtTheLimit_ReturnsTheAmount()
     {
-        var nowcast = new Nowcast(ReferenceTime, [new NowcastStep(StepTime.AddMinutes(45), 0.3)]);
+        var nowcast = new Nowcast(ReferenceTime, new NowcastStep(StepTime.AddMinutes(45), 0.3));
 
         var report = RainReport.From(nowcast, ReferenceTime + StalenessLimit, StalenessLimit);
 
@@ -47,7 +56,7 @@ public sealed class RainReportTests
     [Fact]
     public void From_RunOlderThanTheLimit_ReturnsUnknownNamingTheRun()
     {
-        var nowcast = new Nowcast(ReferenceTime, [new NowcastStep(StepTime.AddMinutes(45), 0.3)]);
+        var nowcast = new Nowcast(ReferenceTime, new NowcastStep(StepTime.AddMinutes(45), 0.3));
 
         var report = RainReport.From(nowcast, ReferenceTime + StalenessLimit + TimeSpan.FromMinutes(1),
             StalenessLimit);
@@ -59,7 +68,7 @@ public sealed class RainReportTests
     [Fact]
     public void From_NoStepForNow_ReturnsUnknownNamingTheStep()
     {
-        var nowcast = new Nowcast(ReferenceTime, []);
+        var nowcast = new Nowcast(ReferenceTime, null);
 
         var report = RainReport.From(nowcast, StepTime.AddMinutes(5), StalenessLimit);
 

@@ -66,9 +66,8 @@ public sealed class RainReportLogTests
     private List<LogLevel> LoggedLevels() =>
     [
         .. _logger.ReceivedCalls()
-            .Select(call => call.GetArguments())
-            .Where(arguments => arguments.Length == 5)
-            .Select(arguments => arguments[0])
+            .Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log))
+            .Select(call => call.GetArguments()[0])
             .OfType<LogLevel>()
     ];
 }

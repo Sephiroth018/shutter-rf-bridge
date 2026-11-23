@@ -60,17 +60,36 @@ public sealed class NowcastClientTests : IDisposable
         var nowcast = await GetStepAsync();
 
         Assert.Equal(NowcastResponseBuilder.DefaultReferenceTime, nowcast.ReferenceTime);
-        Assert.Equal([new NowcastStep(StepTime, 0.3)], nowcast.Steps);
+        Assert.Equal(new NowcastStep(StepTime, 0.3), nowcast.Step);
     }
 
     [Fact]
-    public async Task GetStepAsync_StepWithoutValue_LeavesItOut()
+    public async Task GetStepAsync_StepWithoutValue_ReturnsNoStep()
     {
         Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, null).Build());
 
         var nowcast = await GetStepAsync();
 
-        Assert.Empty(nowcast.Steps);
+        Assert.Null(nowcast.Step);
+    }
+
+    [Fact]
+    public async Task GetStepAsync_RunNotCoveringTheStep_ReturnsNoStep()
+    {
+        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build());
+
+        var nowcast = await GetStepAsync();
+
+        Assert.Null(nowcast.Step);
+    }
+
+    [Fact]
+    public async Task GetStepAsync_TwoSteps_ThrowsJsonException()
+    {
+        Respond(HttpStatusCode.OK,
+            new NowcastResponseBuilder().WithStep(StepTime, 0.1).WithStep(StepTime.AddMinutes(15), 0.3).Build());
+
+        await Assert.ThrowsAsync<JsonException>(GetStepAsync);
     }
 
     [Theory]

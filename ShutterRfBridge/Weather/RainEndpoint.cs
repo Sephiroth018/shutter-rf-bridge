@@ -1,5 +1,3 @@
-using System.Net.Mime;
-
 namespace ShutterRfBridge.Weather;
 
 /// <summary>
@@ -10,10 +8,9 @@ internal static class RainEndpoint
 {
     public const string Path = "/weather/rain";
 
-    public static IEndpointRouteBuilder MapRainEndpoint(this IEndpointRouteBuilder endpoints)
+    public static void MapRainEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet(Path, async (RainReporter reporter, CancellationToken cancellationToken) =>
-            Results.Text((await reporter.ReportAsync(cancellationToken)).ToAnswer(), MediaTypeNames.Text.Plain));
-        return endpoints;
+            Results.Text((await reporter.ReportAsync(cancellationToken)).ToAnswer()));
     }
 }

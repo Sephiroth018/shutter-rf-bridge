@@ -19,7 +19,7 @@ internal abstract record RainReport
         }
 
         var stepTime = Nowcast.StepTimeAt(now);
-        return nowcast.Steps.FirstOrDefault(step => step.Time == stepTime) is { } currentStep
+        return nowcast.Step is { } currentStep && currentStep.Time == stepTime
             ? new RainAmount(currentStep.Millimetres)
             : new RainUnknown($"the nowcast has no value for {stepTime:u}");
     }
