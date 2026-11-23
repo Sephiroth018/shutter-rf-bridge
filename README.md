@@ -2,7 +2,8 @@
 
 Controls radio-controlled external blinds and roller shutters from a Homematic CCU3. A service on
 a Raspberry Pi 4 sends the shutters' 433 MHz remote control codes through a CC1101 transceiver
-and offers them as an HTTP API, which CUxD devices on the CCU3 call.
+and offers them as an HTTP API, which CUxD devices on the CCU3 call. As a bonus, it tells the CCU3
+how much rain falls at the house, from GeoSphere Austria's rain nowcast.
 
 ## Requirements
 
@@ -48,8 +49,8 @@ built-in settings:
 sudo nano /etc/shutter-rf-bridge/appsettings.json
 ```
 
-Fill in `RemoteId` and the CCU's IP address as the first entry of `AllowedClients`; the comments in
-the file explain each value, and [Configuration](#configuration) has the details. Once the service
+Fill in `RemoteId` and the CCU's IP address as the first entry of `AllowedClients`, and, for the
+rain, the house's `Latitude` and `Longitude`; the comments in the file explain each value, and [Configuration](#configuration) has the details. Once the service
 is installed, restart it after every change:
 
 ```bash
@@ -151,6 +152,54 @@ In each shutter's channel settings:
 
 The channel's other fields aren't needed.
 
+### Rain
+
+The rain comes in through a string system variable that a CUxD timer fills every 15 minutes, with
+no HM script doing the fetch: a script that waits for a command's output stops every other script on
+the CCU3 meanwhile. A program then turns the text into a number and a dry/rain state.
+
+1. Create three system variables:
+
+   | Name | Type | Values |
+   |---|---|---|
+   | `Regen_Pi` | Zeichenkette | The service's answer, e.g. `0.3` or `unknown` |
+   | `Regen_mm` | Zahl, unit `mm` | The rain in the current 15 minutes |
+   | `Regen` | Werteliste | `trocken;Regen;unbekannt` |
+
+2. Create one CUxD **(28) System** device with the function **Timer** and accept it from the
+   WebUI's inbox. In its first channel's settings:
+
+   | Field | Value |
+   |---|---|
+   | `TIMER_PRESET` | `:0:0/:15:0/:30:0/:45:0` |
+   | `REPEAT` | ticked |
+   | `CMD_EXEC` | `extra/timer.tcl Regen_Pi ~22$(curl -sf -m 10 http://<pi>:5080/weather/rain \|\| echo unknown)~22` |
+   | `EXEC_TIMEOUT` | `1` |
+
+   `~22` is CUxD's spelling of `"` in these fields. `timer.tcl` writes the answer into `Regen_Pi`;
+   if the Pi doesn't answer, `curl` fails and `unknown` is written instead. If the timer doesn't
+   start by itself, start it once from a script:
+   `dom.GetObject("CUxD.CUX2800001:1.TIMER_SET").State(":0:0/:15:0/:30:0/:45:0");`
+
+3. Create a program with the condition **Systemzustand `Regen_Pi` gleich `unknown`, bei Änderung
+   auslösen**:
+   - **Dann:** a script that sets the state to unknown:
+
+     ```
+     dom.GetObject("Regen").State(2);
+     ```
+
+   - **Sonst:** a script that sets the amount, and the state by a threshold of your choice:
+
+     ```
+     var mm = dom.GetObject("Regen_Pi").Value().ToFloat();
+     dom.GetObject("Regen_mm").State(mm);
+     if (mm >= 0.1) { dom.GetObject("Regen").State(1); } else { dom.GetObject("Regen").State(0); }
+     ```
+
+Other programs react to `Regen`, which changes only when the state does, or compare `Regen_mm` with
+their own threshold, checking first that `Regen` isn't unknown.
+
 ### Known limitations
 
 - **The radio is one-way.** After the physical remote has been used, the CCU's position estimate is
@@ -159,11 +208,19 @@ The channel's other fields aren't needed.
   physical remote. Use the remote instead.
 - **Run times are at most 65 seconds** (see step 3 above).
 - **A restart of the service drops pending timed Stops** (see [Update](#update)).
+- **The rain is radar-based:** it misses light drizzle and very local showers, and lags by about
+  30 minutes. That's enough for "keep closed while it rains", not for protecting anything from a
+  sudden shower.
 
 ## HTTP API
 
-Every endpoint is a `POST` without a body, with the shutter's channel on the remote (0–15) in the
-path:
+Every request from a client that isn't in `Bridge:AllowedClients` (see
+[Configuration](#configuration)) is answered with `403 Forbidden`, whatever the path.
+
+### Shutters
+
+Every shutter endpoint is a `POST` without a body, with the shutter's channel on the remote (0–15)
+in the path:
 
 | Endpoint | Command |
 |---|---|
@@ -179,8 +236,6 @@ The service answers:
 - **`202 Accepted`** at once, with the command queued.
 - **`400 Bad Request`** for a channel or level out of range, a value that isn't a number, or a run
   time of 0 or outside −32 768…32 767.
-- **`403 Forbidden`** for a client that isn't in `Bridge:AllowedClients` (see
-  [Configuration](#configuration)), whatever the path.
 
 **Moves:**
 
@@ -204,6 +259,25 @@ channel 3 halfway down over 10 seconds:
 curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 ```
 
+### Rain
+
+`GET /weather/rain` answers `200 OK` with one line of plain text:
+
+- **A number:** the millimetres of rain in the current 15 minutes at the house, with a decimal
+  point (`0`, `0.3`).
+- **`unknown`:** no location is configured, GeoSphere didn't answer within `Weather:RequestTimeout`
+  or answered with an error, or its latest nowcast run is older than `Weather:StalenessLimit`.
+
+Each request fetches the current step of GeoSphere Austria's 1 km rain nowcast
+(`nowcast-v1-15min-1km`); nothing is cached. To try it on the Pi:
+
+```bash
+curl http://127.0.0.1:5080/weather/rain
+```
+
+The rain data comes from [GeoSphere Austria](https://data.hub.geosphere.at/), under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## Configuration
 
 The settings come from these sources, each overriding the ones before it:
@@ -222,26 +296,35 @@ The settings:
 |---|---|
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
 | `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list. |
+| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain; both or neither. |
+| `Weather:StalenessLimit` | How old GeoSphere's latest nowcast run may be before the rain is `unknown`: `01:00:00` by default. |
+| `Weather:RequestTimeout` | How long the request to GeoSphere may take: `00:00:05` by default, below the CCU3's `curl -m 10`. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
-The service doesn't start if the remote ID is missing or too large, the allow-list is empty, or an
-entry isn't an IP address; the journal says which.
+The service doesn't start if the remote ID is missing or too large, the allow-list is empty, an
+entry isn't an IP address, only one coordinate is set or one is out of range, or a weather limit
+isn't positive; the journal says which.
 
 **Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
 profile uses the Development environment, listening on `http://localhost:5080`. Development only
 logs what it would send over the radio, uses a made-up remote ID and allows `127.0.0.1` and `::1`.
+Its made-up location is in Austria, so the rain endpoint fetches real nowcast data.
 
 ## Logging
 
 The service logs with [NLog](https://nlog-project.org/):
 
-- **Information:** each command received, each timed Stop queued and each command sent.
-- **Warning:** refused and rejected requests.
+- **Debug:** each rain answer, with its reason when it's unknown.
+- **Information:** each command received, each timed Stop queued and each command sent, and a
+  change of the rain between dry and raining.
+- **Warning:** refused and rejected requests, and the rain becoming unknown, with the reason;
+  further unknown answers during the same outage stay at debug level.
 - **Error:** a command that failed to send, after which the service goes on with the next one, and
   an unexpected error, which stops the service so that systemd restarts it (up to 5 times in 5
   minutes).
 
-ASP.NET Core's own entries below warning level are left out, to spare the SD card.
+ASP.NET Core's own entries below warning level are left out, and the request to GeoSphere isn't
+logged by .NET itself, to spare the SD card.
 
 **Defaults:**
 
