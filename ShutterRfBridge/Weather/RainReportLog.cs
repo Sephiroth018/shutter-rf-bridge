@@ -4,7 +4,7 @@ namespace ShutterRfBridge.Weather;
 ///     Logs every report at debug level and only changes of its <see cref="RainCondition" /> above it, since the CCU3
 ///     asks every 15 minutes. A change to unknown is a warning; further unknown reports during an outage aren't.
 /// </summary>
-internal sealed partial class RainReportLog
+public partial class RainReportLog
 {
     private readonly Lock _lock = new();
     private readonly ILogger<RainReportLog> _logger;

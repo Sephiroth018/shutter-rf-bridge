@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 namespace ShutterRfBridge.Weather;
 
 /// <summary>Reports the rain at the house now, fetching the nowcast for every report; any failure reports unknown.</summary>
-internal sealed class RainReporter
+public class RainReporter
 {
     private readonly NowcastClient _client;
     private readonly RainReportLog _log;

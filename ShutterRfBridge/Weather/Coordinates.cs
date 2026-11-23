@@ -4,7 +4,7 @@ namespace ShutterRfBridge.Weather;
 ///     A point on the earth in decimal degrees. Both are nullable because the settings template leaves them empty,
 ///     which binds as <see langword="null" />.
 /// </summary>
-internal sealed class Coordinates
+public class Coordinates
 {
     public const double MaxLatitude = 90;
     public const double MaxLongitude = 180;

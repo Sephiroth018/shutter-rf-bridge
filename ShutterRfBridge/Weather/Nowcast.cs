@@ -4,7 +4,7 @@ namespace ShutterRfBridge.Weather;
 ///     One run of the rain nowcast for one point: the run's reference time and the step asked for, or
 ///     <see langword="null" /> when the run doesn't cover it.
 /// </summary>
-internal sealed record Nowcast(DateTimeOffset ReferenceTime, NowcastStep? Step)
+public record Nowcast(DateTimeOffset ReferenceTime, NowcastStep? Step)
 {
     /// <summary>The nowcast's time resolution.</summary>
     public static readonly TimeSpan StepLength = TimeSpan.FromMinutes(15);

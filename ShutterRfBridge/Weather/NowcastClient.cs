@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace ShutterRfBridge.Weather;
 
 /// <summary>Fetches GeoSphere Austria's rain nowcast (dataset <c>nowcast-v1-15min-1km</c>) for one point and one step.</summary>
-internal sealed class NowcastClient
+public class NowcastClient
 {
     // The API's start and end format, in UTC.
     private const string StepTimeFormat = "yyyy-MM-ddTHH:mm";

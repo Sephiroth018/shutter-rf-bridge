@@ -1,7 +1,7 @@
 namespace ShutterRfBridge.Weather;
 
 /// <summary>The settings for the rain at the house, from the <see cref="SectionName" /> configuration section.</summary>
-internal sealed class WeatherOptions
+public class WeatherOptions
 {
     public const string SectionName = "Weather";
 

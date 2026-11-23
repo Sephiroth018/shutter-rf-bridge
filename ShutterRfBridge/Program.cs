@@ -57,7 +57,6 @@ var app = builder.Build();
 app.UseMiddleware<ClientAllowListMiddleware>();
 app.UseMiddleware<RejectedRequestLoggingMiddleware>();
 app.MapControllers();
-app.MapRainEndpoint();
 
 // A failed background service stops the host, which still ends with exit code 0; systemd restarts on a non-zero one.
 // Resolved before running, since the host disposes its services when it stops.

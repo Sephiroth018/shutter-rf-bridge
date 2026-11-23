@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ShutterRfBridge.Weather;
 
 /// <summary>The rain in the current step, in millimetres per <see cref="Nowcast.StepLength" />.</summary>
-internal sealed record RainAmount(double Millimetres) : RainReport
+public record RainAmount(double Millimetres) : RainReport
 {
     public override RainCondition Condition => Millimetres > 0 ? RainCondition.Raining : RainCondition.Dry;
 

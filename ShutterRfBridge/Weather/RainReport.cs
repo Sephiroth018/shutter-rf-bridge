@@ -1,7 +1,7 @@
 namespace ShutterRfBridge.Weather;
 
 /// <summary>The rain at the house in the current nowcast step, as the CCU3 is told it.</summary>
-internal abstract record RainReport
+public abstract record RainReport
 {
     /// <summary>Whether it's dry, raining or unknown, which is what the log reports changes of.</summary>
     public abstract RainCondition Condition { get; }
