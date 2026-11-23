@@ -8,7 +8,6 @@ public class NowcastClient
 {
     // ISO 8601 in UTC, which the API takes for start and end.
     private const string StepTimeFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    public static readonly Uri BaseAddress = new("https://dataset.api.hub.geosphere.at/v1/");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -19,6 +18,7 @@ public class NowcastClient
 
     private readonly HttpClient _httpClient;
 
+    /// <param name="httpClient">A client whose base address is <see cref="WeatherOptions.ApiAddress" />.</param>
     public NowcastClient(HttpClient httpClient)
     {
         _httpClient = httpClient;

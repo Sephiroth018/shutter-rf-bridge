@@ -8,6 +8,7 @@ namespace ShutterRfBridge.Weather;
 /// </summary>
 internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
 {
+    private const string ApiAddressKey = $"{WeatherOptions.SectionName}:{nameof(WeatherOptions.ApiAddress)}";
     private const string LocationKey = $"{WeatherOptions.SectionName}:{nameof(WeatherOptions.Location)}";
 
     public ValidateOptionsResult Validate(string? name, WeatherOptions options)
@@ -20,6 +21,7 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
                 Coordinates.MaxLongitude));
         }
 
+        failures.Add(ValidateApiAddress(options.ApiAddress));
         failures.Add(ValidatePositive(nameof(WeatherOptions.StalenessLimit), options.StalenessLimit));
         failures.Add(ValidatePositive(nameof(WeatherOptions.RequestTimeout), options.RequestTimeout));
         var messages = failures.OfType<string>().ToList();
@@ -34,6 +36,15 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
                 $"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}.",
             _ => null
         };
+
+    private static string? ValidateApiAddress(Uri? address) => address switch
+    {
+        null => $"{ApiAddressKey} is missing.",
+        { IsAbsoluteUri: false } or { Scheme: not ("https" or "http") } =>
+            $"{ApiAddressKey} '{address}' isn't an absolute http or https address.",
+        _ when !address.AbsolutePath.EndsWith('/') => $"{ApiAddressKey} '{address}' doesn't end with a slash.",
+        _ => null
+    };
 
     private static string? ValidatePositive(string limitName, TimeSpan limit) =>
         limit <= TimeSpan.Zero ? $"{WeatherOptions.SectionName}:{limitName} must be positive." : null;

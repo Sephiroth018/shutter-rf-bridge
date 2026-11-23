@@ -297,13 +297,15 @@ The settings:
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
 | `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list. |
 | `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain; both or neither. |
+| `Weather:ApiAddress` | GeoSphere's Dataset API, ending with a slash: `https://dataset.api.hub.geosphere.at/v1/` by default. |
 | `Weather:StalenessLimit` | How old GeoSphere's latest nowcast run may be before the rain is `unknown`: `01:00:00` by default. |
 | `Weather:RequestTimeout` | How long the request to GeoSphere may take: `00:00:05` by default, below the CCU3's `curl -m 10`. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
 The service doesn't start if the remote ID is missing or too large, the allow-list is empty, an
-entry isn't an IP address, only one coordinate is set or one is out of range, or a weather limit
-isn't positive; the journal says which.
+entry isn't an IP address, only one coordinate is set or one is out of range, the API address isn't
+an absolute http or https address ending with a slash, or a weather limit isn't positive; the
+journal says which.
 
 **Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
 profile uses the Development environment, listening on `http://localhost:5080`. Development only

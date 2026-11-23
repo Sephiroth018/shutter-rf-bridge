@@ -16,7 +16,7 @@ public sealed class NowcastClientTests : IDisposable
 
     public NowcastClientTests()
     {
-        _httpClient = new HttpClient(_handler) { BaseAddress = NowcastClient.BaseAddress };
+        _httpClient = new HttpClient(_handler) { BaseAddress = new Uri("https://dataset.api.hub.geosphere.at/v1/") };
         _client = new NowcastClient(_httpClient);
     }
 

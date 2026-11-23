@@ -32,8 +32,9 @@ builder.Services.AddOptions<WeatherOptions>().BindConfiguration(WeatherOptions.S
 builder.Services.AddSingleton<IValidateOptions<WeatherOptions>, WeatherOptionsValidator>();
 builder.Services.AddHttpClient<NowcastClient>((services, client) =>
     {
-        client.BaseAddress = NowcastClient.BaseAddress;
-        client.Timeout = services.GetRequiredService<IOptions<WeatherOptions>>().Value.RequestTimeout;
+        var options = services.GetRequiredService<IOptions<WeatherOptions>>().Value;
+        client.BaseAddress = options.ApiAddress;
+        client.Timeout = options.RequestTimeout;
     })
     // Its default logging writes every request at info level, which would reach the SD card every 15 minutes.
     .RemoveAllLoggers();
