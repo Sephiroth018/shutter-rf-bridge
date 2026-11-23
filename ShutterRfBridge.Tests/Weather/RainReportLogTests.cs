@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using NSubstitute;
+using Microsoft.Extensions.Logging.Testing;
 using ShutterRfBridge.Weather;
 
 namespace ShutterRfBridge.Tests.Weather;
@@ -7,11 +7,10 @@ namespace ShutterRfBridge.Tests.Weather;
 public sealed class RainReportLogTests
 {
     private readonly RainReportLog _log;
-    private readonly ILogger<RainReportLog> _logger = Substitute.For<ILogger<RainReportLog>>();
+    private readonly FakeLogger<RainReportLog> _logger = new();
 
     public RainReportLogTests()
     {
-        _logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
         _log = new RainReportLog(_logger);
     }
 
@@ -63,11 +62,5 @@ public sealed class RainReportLogTests
         Assert.Equal([LogLevel.Debug, LogLevel.Warning, LogLevel.Debug], LoggedLevels());
     }
 
-    private List<LogLevel> LoggedLevels() =>
-    [
-        .. _logger.ReceivedCalls()
-            .Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log))
-            .Select(call => call.GetArguments()[0])
-            .OfType<LogLevel>()
-    ];
+    private List<LogLevel> LoggedLevels() => [.. _logger.Collector.GetSnapshot().Select(record => record.Level)];
 }

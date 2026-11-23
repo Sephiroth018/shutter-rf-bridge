@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using ShutterRfBridge.Radio;
@@ -29,11 +30,10 @@ internal sealed class Cc1101Substitute
     public const byte TxUnderflow = 0x16;
 
     private readonly ISpiBus _bus = Substitute.For<ISpiBus>();
-    private readonly TimeProvider _clock = Substitute.For<TimeProvider>();
+    private readonly FakeTimeProvider _clock = new();
 
     public Cc1101Substitute()
     {
-        _clock.TimestampFrequency.Returns(TimeSpan.TicksPerSecond);
         WithVersion(0x14);
         WithMainState(Idle);
     }
@@ -70,7 +70,7 @@ internal sealed class Cc1101Substitute
     /// <summary>Makes the clock jump past every timeout after its first reading.</summary>
     public Cc1101Substitute WithClockRunningOut()
     {
-        _clock.GetTimestamp().Returns(0, TimeSpan.TicksPerHour);
+        _clock.AutoAdvanceAmount = TimeSpan.FromHours(1);
         return this;
     }
 

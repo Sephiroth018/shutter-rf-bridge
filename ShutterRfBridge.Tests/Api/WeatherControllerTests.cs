@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using ShutterRfBridge.Tests.TestSupport;
@@ -15,9 +16,7 @@ public sealed class WeatherControllerTests : IAsyncDisposable
 
     public WeatherControllerTests()
     {
-        var timeProvider = new TimeProviderSubstitute().TimeProvider;
-        timeProvider.GetUtcNow().Returns(Now);
-        _application.ReplaceService(timeProvider);
+        _application.ReplaceService<TimeProvider>(new FakeTimeProvider(Now));
     }
 
     public async ValueTask DisposeAsync()
