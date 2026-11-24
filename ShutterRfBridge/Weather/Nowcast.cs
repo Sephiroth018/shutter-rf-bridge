@@ -1,13 +1,14 @@
 namespace ShutterRfBridge.Weather;
 
 /// <summary>
-///     One run of the rain nowcast for one point and one step: the run's reference time and the step's millimetres per
-///     <see cref="StepLength" />, or <see langword="null" /> when the run has no value for the step.
+///     One run of the rain nowcast for one point: the run's reference time and the heaviest rain, in millimetres per
+///     <see cref="StepLength" />, among the steps asked for, or <see langword="null" /> when the run has no value for
+///     the first of them.
 /// </summary>
 public record Nowcast(DateTimeOffset ReferenceTime, double? Millimetres)
 {
     /// <summary>The nowcast's time resolution.</summary>
-    private static readonly TimeSpan StepLength = TimeSpan.FromMinutes(15);
+    public static readonly TimeSpan StepLength = TimeSpan.FromMinutes(15);
 
     /// <summary>The time of the step <paramref name="time" /> falls in: rounded down to <see cref="StepLength" />, in UTC.</summary>
     public static DateTimeOffset StepTimeAt(DateTimeOffset time) =>

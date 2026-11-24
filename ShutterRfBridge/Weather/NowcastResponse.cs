@@ -12,11 +12,11 @@ internal sealed record NowcastResponse(
     IReadOnlyList<NowcastResponse.Feature> Features)
 {
     /// <summary>
-    ///     The run with its value for the step at <paramref name="stepTime" />, which is missing when the response has no
-    ///     timestamp or no value.
+    ///     The run with the heaviest rain among the <paramref name="stepTimes" /> it covers, which is missing when it has
+    ///     no value for the first one. A run ending early covers only the first few.
     /// </summary>
-    /// <exception cref="JsonException">The response isn't one point with at most that one step.</exception>
-    public Nowcast ToNowcast(DateTimeOffset stepTime)
+    /// <exception cref="JsonException">The response isn't one point with the steps asked for.</exception>
+    public Nowcast ToNowcast(IReadOnlyList<DateTimeOffset> stepTimes)
     {
         if (Features is not [var feature])
         {
@@ -24,19 +24,21 @@ internal sealed record NowcastResponse(
         }
 
         var amounts = feature.Properties.Parameters.Rr.Data;
-        if (amounts.Count != Timestamps.Count || Timestamps.Count > 1)
+        if (amounts.Count != Timestamps.Count)
         {
             throw new JsonException(
-                $"The nowcast response has {amounts.Count} values for {Timestamps.Count} timestamps instead of at most one step.");
+                $"The nowcast response has {amounts.Count} values for {Timestamps.Count} timestamps.");
         }
 
-        if (Timestamps is [var time] && time != stepTime)
+        // Longer than the steps asked for, the timestamps can't equal their beginning.
+        if (!Timestamps.SequenceEqual(stepTimes.Take(Timestamps.Count)))
         {
             throw new JsonException(
-                $"The nowcast response's step at {time:u} isn't the one asked for, at {stepTime:u}.");
+                $"The nowcast response's steps at {string.Join(", ", Timestamps.Select(time => $"{time:u}"))} aren't the ones asked for, from {stepTimes[0]:u} on.");
         }
 
-        return new Nowcast(ReferenceTime, amounts is [var millimetres] ? millimetres : null);
+        var millimetres = amounts is [not null, ..] ? amounts.Max() : null;
+        return new Nowcast(ReferenceTime, millimetres);
     }
 
     internal sealed record Feature(FeatureProperties Properties);

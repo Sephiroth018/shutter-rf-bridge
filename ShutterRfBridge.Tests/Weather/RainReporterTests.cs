@@ -43,6 +43,20 @@ public sealed class RainReporterTests : IDisposable
     }
 
     [Fact]
+    public async Task ReportAsync_HeavierRainInTheNextHalfHour_ReturnsIt()
+    {
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
+            .WithStep(StepTime, 0)
+            .WithStep(StepTime.AddMinutes(15), 0.2)
+            .WithStep(StepTime.AddMinutes(30), 0.4)
+            .Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Equal(0.4, millimetres);
+    }
+
+    [Fact]
     public async Task ReportAsync_RunExactlyAnHourOld_ReturnsTheMillimetres()
     {
         _timeProvider.SetUtcNow(NowcastResponseBuilder.DefaultReferenceTime.AddHours(1));

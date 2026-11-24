@@ -164,7 +164,7 @@ the CCU3 meanwhile. A program then turns the text into a number and a dry/rain s
    | Name | Type | Values |
    |---|---|---|
    | `Regen_Pi` | Zeichenkette | The service's answer, e.g. `0.3` or `unknown` |
-   | `Regen_mm` | Zahl, unit `mm` | The rain in the current 15 minutes |
+   | `Regen_mm` | Zahl, unit `mm` | The rain in the heaviest 15 minutes of the next 45 |
    | `Regen` | Werteliste | `trocken;Regen;unbekannt` |
 
 2. Create one CUxD **(28) System** device with the function **Timer** and accept it from the
@@ -210,8 +210,9 @@ their own threshold, checking first that `Regen` isn't unknown.
 - **Run times are at most 65 seconds** (see step 3 above).
 - **A restart of the service drops pending timed Stops** (see [Update](#update)).
 - **The rain is radar-based:** it misses light drizzle and very local showers, and lags by about
-  30 minutes. That's enough for "keep closed while it rains", not for protecting anything from a
-  sudden shower.
+  30 minutes. Reporting the next 45 minutes makes up for the lag, but means shutters also close
+  for a shower that passes by. That's enough for "keep closed while it rains", not for protecting
+  anything from a sudden shower.
 
 ## HTTP API
 
@@ -264,13 +265,14 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 
 `GET /weather/rain` answers `200 OK` with one line of plain text:
 
-- **A number:** the millimetres of rain in the current 15 minutes at the house, with a decimal
-  point (`0`, `0.3`).
+- **A number:** the millimetres of rain at the house in the heaviest 15 minutes among the current
+  ones and the next two, with a decimal point (`0`, `0.3`). Looking ahead makes up for the
+  nowcast's lag of about 30 minutes, so the rain shows before it arrives.
 - **`unknown`:** no location is configured, GeoSphere didn't answer within 5 seconds or
   answered with an error or something unreadable, its latest nowcast run is older than an
   hour, or the run has no value for the current 15 minutes.
 
-Each request fetches the current step of GeoSphere Austria's 1 km rain nowcast
+Each request fetches these three steps of GeoSphere Austria's 1 km rain nowcast
 (`nowcast-v1-15min-1km`); nothing is cached. To try it on the Pi:
 
 ```bash

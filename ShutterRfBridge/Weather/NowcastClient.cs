@@ -30,23 +30,28 @@ public class NowcastClient
     }
 
     /// <summary>
-    ///     Gets the latest run with its value for the step at <paramref name="stepTime" />; the run has no value when it
-    ///     doesn't cover that time.
+    ///     Gets the latest run with the heaviest rain among <paramref name="stepCount" /> steps from
+    ///     <paramref name="firstStepTime" /> on; the run has no value when it doesn't cover the first step.
     /// </summary>
     /// <exception cref="HttpRequestException">The request failed or didn't succeed.</exception>
     /// <exception cref="TaskCanceledException">The request timed out or was cancelled.</exception>
-    /// <exception cref="JsonException">The response isn't a nowcast for one point and that step.</exception>
-    public async Task<Nowcast> GetStepAsync(
+    /// <exception cref="JsonException">The response isn't a nowcast for one point and those steps.</exception>
+    public async Task<Nowcast> GetStepsAsync(
         Coordinates location,
-        DateTimeOffset stepTime,
+        DateTimeOffset firstStepTime,
+        int stepCount,
         CancellationToken cancellationToken)
     {
-        // ISO 8601 in UTC, which the API takes for start and end.
-        var time = stepTime.UtcDateTime.ToString("o", CultureInfo.InvariantCulture);
+        var stepTimes = Enumerable.Range(0, stepCount).Select(step => firstStepTime + step * Nowcast.StepLength)
+            .ToList();
         var url = string.Create(CultureInfo.InvariantCulture,
-            $"{DatasetAddress}?parameters=rr&lat_lon={location.Latitude},{location.Longitude}&start={time}&end={time}");
+            $"{DatasetAddress}?parameters=rr&lat_lon={location.Latitude},{location.Longitude}&start={Format(stepTimes[0])}&end={Format(stepTimes[^1])}");
         var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url, JsonOptions, cancellationToken)
                        ?? throw new JsonException("The nowcast response is null.");
-        return response.ToNowcast(stepTime);
+        return response.ToNowcast(stepTimes);
     }
+
+    // ISO 8601 in UTC, which the API takes for start and end.
+    private static string Format(DateTimeOffset stepTime) =>
+        stepTime.UtcDateTime.ToString("o", CultureInfo.InvariantCulture);
 }

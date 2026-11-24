@@ -3,9 +3,13 @@ using Microsoft.Extensions.Options;
 
 namespace ShutterRfBridge.Weather;
 
-/// <summary>Reports the rain at the house now, fetching the nowcast for every report.</summary>
+/// <summary>Reports the rain at the house, now and shortly ahead, fetching the nowcast for every report.</summary>
 public class RainReporter
 {
+    // The current step and the next two: the nowcast lags about 30 minutes, and shutters closing early cost less than
+    // shutters closing once the rain has begun.
+    private const int StepCount = 3;
+
     // A run comes every 15 minutes, so an older one means several runs are missing.
     private static readonly TimeSpan StalenessLimit = TimeSpan.FromHours(1);
 
@@ -27,8 +31,8 @@ public class RainReporter
     }
 
     /// <summary>
-    ///     The millimetres of rain in the current step, or <see langword="null" /> when they're unknown; the log gets
-    ///     the reason.
+    ///     The millimetres of rain in the heaviest of the next 15-minute steps, the current one included, or
+    ///     <see langword="null" /> when the current step's are unknown; the log gets the reason.
     /// </summary>
     public async Task<double?> ReportAsync(CancellationToken cancellationToken)
     {
@@ -42,7 +46,7 @@ public class RainReporter
         Nowcast nowcast;
         try
         {
-            nowcast = await _client.GetStepAsync(location, stepTime, cancellationToken);
+            nowcast = await _client.GetStepsAsync(location, stepTime, StepCount, cancellationToken);
         }
         catch (HttpRequestException exception)
         {
