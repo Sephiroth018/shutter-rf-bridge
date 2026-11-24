@@ -9,9 +9,6 @@ public class NowcastClient
     private const string DatasetAddress =
         "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km";
 
-    // ISO 8601 in UTC, which the API takes for start and end.
-    private const string StepTimeFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -38,7 +35,8 @@ public class NowcastClient
         DateTimeOffset stepTime,
         CancellationToken cancellationToken)
     {
-        var time = stepTime.UtcDateTime.ToString(StepTimeFormat, CultureInfo.InvariantCulture);
+        // ISO 8601 in UTC, which the API takes for start and end.
+        var time = stepTime.UtcDateTime.ToString("o", CultureInfo.InvariantCulture);
         var url = string.Create(CultureInfo.InvariantCulture,
             $"{DatasetAddress}?parameters=rr&lat_lon={location.Latitude},{location.Longitude}&start={time}&end={time}");
         var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url, JsonOptions, cancellationToken)
