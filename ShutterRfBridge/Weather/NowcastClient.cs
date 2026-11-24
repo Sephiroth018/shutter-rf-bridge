@@ -30,8 +30,8 @@ public class NowcastClient
     }
 
     /// <summary>
-    ///     Gets the latest run with the heaviest rain among <paramref name="stepCount" /> steps from
-    ///     <paramref name="firstStepTime" /> on; the run has no value when it doesn't cover the first step.
+    ///     Gets the latest run with its values for <paramref name="stepCount" /> steps from
+    ///     <paramref name="firstStepTime" /> on, as far as it covers them.
     /// </summary>
     /// <exception cref="HttpRequestException">The request failed or didn't succeed.</exception>
     /// <exception cref="TaskCanceledException">The request timed out or was cancelled.</exception>

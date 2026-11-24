@@ -57,6 +57,44 @@ public sealed class RainReporterTests : IDisposable
     }
 
     [Fact]
+    public async Task ReportAsync_LaterStepWithoutValue_ReturnsTheHeaviestOfTheOthers()
+    {
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
+            .WithStep(StepTime, 0.1)
+            .WithStep(StepTime.AddMinutes(15), null)
+            .Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Equal(0.1, millimetres);
+    }
+
+    [Fact]
+    public async Task ReportAsync_CurrentStepWithoutValue_ReturnsUnknownDespiteLaterRain()
+    {
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
+            .WithStep(StepTime, null)
+            .WithStep(StepTime.AddMinutes(15), 0.3)
+            .Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Null(millimetres);
+    }
+
+    [Fact]
+    public async Task ReportAsync_RunNotCoveringTheCurrentStep_ReturnsUnknownAndLogsTheStep()
+    {
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Null(millimetres);
+        Assert.Equal("The rain is now unknown: the nowcast has no value for 2026-11-23 18:30:00Z",
+            _logger.LatestRecord.Message);
+    }
+
+    [Fact]
     public async Task ReportAsync_RunExactlyAnHourOld_ReturnsTheMillimetres()
     {
         _timeProvider.SetUtcNow(NowcastResponseBuilder.DefaultReferenceTime.AddHours(1));

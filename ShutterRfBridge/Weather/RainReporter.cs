@@ -67,13 +67,15 @@ public class RainReporter
                 $"the latest nowcast run, from {nowcast.ReferenceTime:u}, is older than {StalenessLimit}");
         }
 
-        if (nowcast.Millimetres is not { } millimetres)
+        if (nowcast.Millimetres is not [not null, ..])
         {
             return ReportUnknown($"the nowcast has no value for {stepTime:u}");
         }
 
-        _log.RecordAmount(millimetres);
-        return millimetres;
+        // Later steps without a value are left out.
+        var heaviest = nowcast.Millimetres.OfType<double>().Max();
+        _log.RecordAmount(heaviest);
+        return heaviest;
     }
 
     private double? ReportUnknown(string reason)

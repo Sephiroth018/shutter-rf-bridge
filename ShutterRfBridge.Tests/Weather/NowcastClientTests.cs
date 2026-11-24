@@ -58,53 +58,28 @@ public sealed class NowcastClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetStepsAsync_AllSteps_ReturnsTheRunAndTheHeaviestRain()
+    public async Task GetStepsAsync_AllSteps_ReturnsTheRunAndEachStepsMillimetres()
     {
         _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
             .WithStep(StepTime, 0.1)
-            .WithStep(StepTime.AddMinutes(15), 0.5)
+            .WithStep(StepTime.AddMinutes(15), null)
             .WithStep(StepTime.AddMinutes(30), 0.3)
             .Build());
 
         var nowcast = await GetStepsAsync();
 
-        Assert.Equal(new Nowcast(NowcastResponseBuilder.DefaultReferenceTime, 0.5), nowcast);
+        Assert.Equal(NowcastResponseBuilder.DefaultReferenceTime, nowcast.ReferenceTime);
+        Assert.Equal([0.1, null, 0.3], nowcast.Millimetres);
     }
 
     [Fact]
-    public async Task GetStepsAsync_RunEndingAfterTheFirstStep_ReturnsItsRain()
+    public async Task GetStepsAsync_RunEndingAfterTheFirstStep_ReturnsOnlyItsMillimetres()
     {
         _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
 
         var nowcast = await GetStepsAsync();
 
-        Assert.Equal(0.3, nowcast.Millimetres);
-    }
-
-    [Fact]
-    public async Task GetStepsAsync_LaterStepWithoutValue_ReturnsTheHeaviestOfTheOthers()
-    {
-        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
-            .WithStep(StepTime, 0.1)
-            .WithStep(StepTime.AddMinutes(15), null)
-            .Build());
-
-        var nowcast = await GetStepsAsync();
-
-        Assert.Equal(0.1, nowcast.Millimetres);
-    }
-
-    [Fact]
-    public async Task GetStepsAsync_FirstStepWithoutValue_ReturnsNoMillimetres()
-    {
-        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
-            .WithStep(StepTime, null)
-            .WithStep(StepTime.AddMinutes(15), 0.3)
-            .Build());
-
-        var nowcast = await GetStepsAsync();
-
-        Assert.Null(nowcast.Millimetres);
+        Assert.Equal([0.3], nowcast.Millimetres);
     }
 
     [Fact]
@@ -114,7 +89,7 @@ public sealed class NowcastClientTests : IDisposable
 
         var nowcast = await GetStepsAsync();
 
-        Assert.Null(nowcast.Millimetres);
+        Assert.Empty(nowcast.Millimetres);
     }
 
     [Fact]
