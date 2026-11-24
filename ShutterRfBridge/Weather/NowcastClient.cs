@@ -9,6 +9,12 @@ public class NowcastClient
     private const string DatasetAddress =
         "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km";
 
+    /// <summary>
+    ///     How long the request may take: below the CCU3's <c>curl -m 10</c>, so the CCU3 gets <c>unknown</c> rather
+    ///     than nothing.
+    /// </summary>
+    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,

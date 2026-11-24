@@ -35,18 +35,5 @@ public sealed class WeatherOptionsValidatorTests
         Assert.Equal([failure], result.Failures);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void Validate_RequestTimeoutNotPositive_FailsNamingIt(int seconds)
-    {
-        var result = _validator.Validate(null, new WeatherOptions { RequestTimeout = TimeSpan.FromSeconds(seconds) });
-
-        Assert.Equal(["Weather:RequestTimeout must be positive."], result.Failures);
-    }
-
-    private static WeatherOptions Options(Coordinates? location) => new()
-    {
-        Location = location, RequestTimeout = TimeSpan.FromSeconds(5)
-    };
+    private static WeatherOptions Options(Coordinates? location) => new() { Location = location };
 }

@@ -50,7 +50,7 @@ public class RainReporter
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return ReportUnknown($"the nowcast request took longer than {_options.RequestTimeout}");
+            return ReportUnknown($"the nowcast request took longer than {NowcastClient.RequestTimeout}");
         }
         catch (JsonException exception)
         {

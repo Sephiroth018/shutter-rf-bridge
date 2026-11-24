@@ -95,6 +95,6 @@ public sealed class RainReporterTests : IDisposable
 
     private RainReporter CreateReporter(Coordinates? location) =>
         new(new NowcastClient(_httpClient),
-            Options.Create(new WeatherOptions { Location = location, RequestTimeout = TimeSpan.FromSeconds(5) }),
+            Options.Create(new WeatherOptions { Location = location }),
             _timeProvider, new RainReportLog(_logger));
 }

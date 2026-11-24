@@ -20,11 +20,6 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
                 Coordinates.MaxLongitude);
         }
 
-        if (options.RequestTimeout <= TimeSpan.Zero)
-        {
-            failures.Add($"{WeatherOptions.SectionName}:{nameof(WeatherOptions.RequestTimeout)} must be positive.");
-        }
-
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }
 

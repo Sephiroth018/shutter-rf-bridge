@@ -32,12 +32,10 @@ public sealed class ProgramTests : IAsyncDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => _application.PostAsync("/shutters/3/stop"));
     }
 
-    [Theory]
-    [InlineData("Weather:Location:Latitude", "91")]
-    [InlineData("Weather:RequestTimeout", "-00:00:01")]
-    public async Task Main_InvalidWeatherSetting_FailsTheStartup(string key, string value)
+    [Fact]
+    public async Task Main_CoordinateOutOfRange_FailsTheStartup()
     {
-        _application.SetSetting(key, value);
+        _application.SetSetting("Weather:Location:Latitude", "91");
 
         await Assert.ThrowsAsync<OptionsValidationException>(() => _application.PostAsync("/shutters/3/stop"));
     }

@@ -30,10 +30,7 @@ builder.Services.AddOptions<BridgeOptions>().BindConfiguration(BridgeOptions.Sec
 builder.Services.AddSingleton<IValidateOptions<BridgeOptions>, BridgeOptionsValidator>();
 builder.Services.AddOptions<WeatherOptions>().BindConfiguration(WeatherOptions.SectionName).ValidateOnStart();
 builder.Services.AddSingleton<IValidateOptions<WeatherOptions>, WeatherOptionsValidator>();
-builder.Services.AddHttpClient<NowcastClient>((services, client) =>
-    {
-        client.Timeout = services.GetRequiredService<IOptions<WeatherOptions>>().Value.RequestTimeout;
-    })
+builder.Services.AddHttpClient<NowcastClient>(client => client.Timeout = NowcastClient.RequestTimeout)
     // Its default logging writes every request at info level, which would reach the SD card every 15 minutes.
     .RemoveAllLoggers();
 builder.Services.AddTransient<RainReporter>();

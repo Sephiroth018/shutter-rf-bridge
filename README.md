@@ -266,8 +266,8 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 
 - **A number:** the millimetres of rain in the current 15 minutes at the house, with a decimal
   point (`0`, `0.3`).
-- **`unknown`:** no location is configured, GeoSphere didn't answer within `Weather:RequestTimeout`
-  or answered with an error or something unreadable, its latest nowcast run is older than an
+- **`unknown`:** no location is configured, GeoSphere didn't answer within 5 seconds or
+  answered with an error or something unreadable, its latest nowcast run is older than an
   hour, or the run has no value for the current 15 minutes.
 
 Each request fetches the current step of GeoSphere Austria's 1 km rain nowcast
@@ -299,12 +299,11 @@ The settings:
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
 | `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list. |
 | `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain; both, or the whole `Location` block left out. |
-| `Weather:RequestTimeout` | How long the request to GeoSphere may take: `00:00:05` by default, below the CCU3's `curl -m 10`. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
 The service doesn't start if the remote ID is missing or too large, the allow-list is empty, an
-entry isn't an IP address, a coordinate is missing, empty or out of range, or the request timeout
-isn't positive; the journal says which.
+entry isn't an IP address, or a coordinate is missing, empty or out of range; the journal says
+which.
 
 **Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
 profile uses the Development environment, listening on `http://localhost:5080`. Development only
