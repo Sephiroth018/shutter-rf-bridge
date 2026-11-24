@@ -6,7 +6,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Flurl" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" />
     <PackageReference Include="NLog.Web.AspNetCore" />
     <PackageReference Include="System.Device.Gpio" />

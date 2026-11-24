@@ -6,6 +6,9 @@ namespace ShutterRfBridge.Weather;
 /// <summary>Reports the rain at the house now, fetching the nowcast for every report; any failure reports unknown.</summary>
 public class RainReporter
 {
+    // A run comes every 15 minutes, so an older one means several runs are missing.
+    private static readonly TimeSpan StalenessLimit = TimeSpan.FromHours(1);
+
     private readonly NowcastClient _client;
     private readonly RainReportLog _log;
     private readonly WeatherOptions _options;
@@ -41,7 +44,7 @@ public class RainReporter
         try
         {
             var nowcast = await _client.GetStepAsync(latitude, longitude, Nowcast.StepTimeAt(now), cancellationToken);
-            return RainReport.From(nowcast, now, _options.StalenessLimit);
+            return RainReport.From(nowcast, now, StalenessLimit);
         }
         catch (HttpRequestException exception)
         {

@@ -5,14 +5,8 @@ public class WeatherOptions
 {
     public const string SectionName = "Weather";
 
-    /// <summary>GeoSphere's Dataset API, which the nowcast's dataset path is appended to.</summary>
-    public Uri? ApiAddress { get; init; }
-
     /// <summary>The house's location; with neither coordinate set, the rain is always unknown.</summary>
     public Coordinates? Location { get; init; }
-
-    /// <summary>How old the nowcast's run may be before its rain counts as unknown.</summary>
-    public TimeSpan StalenessLimit { get; init; }
 
     /// <summary>How long the request for the nowcast may take.</summary>
     public TimeSpan RequestTimeout { get; init; }

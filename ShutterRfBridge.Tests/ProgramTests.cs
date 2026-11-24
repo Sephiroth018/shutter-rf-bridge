@@ -25,8 +25,6 @@ public sealed class ProgramTests : IAsyncDisposable
     [Theory]
     [InlineData("Weather:Location:Longitude", "")]
     [InlineData("Weather:Location:Latitude", "91")]
-    [InlineData("Weather:ApiAddress", "")]
-    [InlineData("Weather:StalenessLimit", "00:00:00")]
     [InlineData("Weather:RequestTimeout", "-00:00:01")]
     public async Task Main_InvalidWeatherSetting_FailsTheStartup(string key, string value)
     {

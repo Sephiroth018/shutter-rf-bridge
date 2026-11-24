@@ -51,40 +51,18 @@ public sealed class WeatherOptionsValidatorTests
         Assert.Equal([failure], result.Failures);
     }
 
-    [Fact]
-    public void Validate_NothingSet_FailsNamingTheAddressAndLimits()
-    {
-        var result = _validator.Validate(null, new WeatherOptions { RequestTimeout = TimeSpan.FromSeconds(-1) });
-
-        Assert.Equal(
-        [
-            "Weather:ApiAddress is missing.", "Weather:StalenessLimit must be positive.",
-            "Weather:RequestTimeout must be positive."
-        ], result.Failures);
-    }
-
     [Theory]
-    [InlineData("v1/", "Weather:ApiAddress 'v1/' isn't an absolute http or https address.")]
-    [InlineData("ftp://example.com/v1/",
-        "Weather:ApiAddress 'ftp://example.com/v1/' isn't an absolute http or https address.")]
-    public void Validate_InvalidApiAddress_FailsNamingIt(string address, string failure)
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_RequestTimeoutNotPositive_FailsNamingIt(int seconds)
     {
-        var result = _validator.Validate(null,
-            new WeatherOptions
-            {
-                ApiAddress = new Uri(address, UriKind.RelativeOrAbsolute),
-                StalenessLimit = TimeSpan.FromHours(1),
-                RequestTimeout = TimeSpan.FromSeconds(5)
-            });
+        var result = _validator.Validate(null, new WeatherOptions { RequestTimeout = TimeSpan.FromSeconds(seconds) });
 
-        Assert.Equal([failure], result.Failures);
+        Assert.Equal(["Weather:RequestTimeout must be positive."], result.Failures);
     }
 
     private static WeatherOptions Options(Coordinates? location) => new()
     {
-        ApiAddress = new Uri("https://example.com/v1/"),
-        Location = location,
-        StalenessLimit = TimeSpan.FromHours(1),
-        RequestTimeout = TimeSpan.FromSeconds(5)
+        Location = location, RequestTimeout = TimeSpan.FromSeconds(5)
     };
 }

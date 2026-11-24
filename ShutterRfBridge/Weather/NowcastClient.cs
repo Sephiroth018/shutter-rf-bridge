@@ -1,13 +1,14 @@
 using System.Globalization;
 using System.Text.Json;
-using Flurl;
-using Microsoft.Extensions.Options;
 
 namespace ShutterRfBridge.Weather;
 
 /// <summary>Fetches GeoSphere Austria's rain nowcast (dataset <c>nowcast-v1-15min-1km</c>) for one point and one step.</summary>
 public class NowcastClient
 {
+    private const string DatasetAddress =
+        "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km";
+
     // ISO 8601 in UTC, which the API takes for start and end.
     private const string StepTimeFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
@@ -18,14 +19,11 @@ public class NowcastClient
         RespectRequiredConstructorParameters = true
     };
 
-    private readonly Uri _apiAddress;
     private readonly HttpClient _httpClient;
 
-    public NowcastClient(HttpClient httpClient, IOptions<WeatherOptions> options)
+    public NowcastClient(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _apiAddress = options.Value.ApiAddress
-                      ?? throw new InvalidOperationException($"{nameof(WeatherOptions.ApiAddress)} isn't set.");
     }
 
     /// <summary>
@@ -42,13 +40,9 @@ public class NowcastClient
         CancellationToken cancellationToken)
     {
         var time = stepTime.UtcDateTime.ToString(StepTimeFormat, CultureInfo.InvariantCulture);
-        var url = new Url(_apiAddress)
-            .AppendPathSegments("timeseries", "forecast", "nowcast-v1-15min-1km")
-            .SetQueryParam("parameters", "rr")
-            .SetQueryParam("lat_lon", string.Create(CultureInfo.InvariantCulture, $"{latitude},{longitude}"))
-            .SetQueryParam("start", time)
-            .SetQueryParam("end", time);
-        var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url.ToUri(), JsonOptions, cancellationToken)
+        var url = string.Create(CultureInfo.InvariantCulture,
+            $"{DatasetAddress}?parameters=rr&lat_lon={latitude},{longitude}&start={time}&end={time}");
+        var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url, JsonOptions, cancellationToken)
                        ?? throw new JsonException("The nowcast response is null.");
         return response.ToNowcast();
     }

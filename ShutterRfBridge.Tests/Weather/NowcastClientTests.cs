@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 using ShutterRfBridge.Tests.TestSupport;
 using ShutterRfBridge.Weather;
@@ -18,8 +17,7 @@ public sealed class NowcastClientTests : IDisposable
     public NowcastClientTests()
     {
         _httpClient = new HttpClient(_handler);
-        _client = new NowcastClient(_httpClient,
-            Options.Create(new WeatherOptions { ApiAddress = new Uri("https://dataset.api.hub.geosphere.at/v1/") }));
+        _client = new NowcastClient(_httpClient);
     }
 
     public void Dispose()
@@ -38,7 +36,7 @@ public sealed class NowcastClientTests : IDisposable
 
         Assert.Equal(
             "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km?parameters=rr&lat_lon=47.5,13.25&start=2026-11-23T18:30:00Z&end=2026-11-23T18:30:00Z",
-            Uri.UnescapeDataString(requested?.AbsoluteUri ?? string.Empty));
+            requested?.AbsoluteUri);
     }
 
     [Fact]
@@ -51,7 +49,7 @@ public sealed class NowcastClientTests : IDisposable
             TestContext.Current.CancellationToken);
 
         Assert.EndsWith("&start=2026-11-23T18:30:00Z&end=2026-11-23T18:30:00Z",
-            Uri.UnescapeDataString(requested?.AbsoluteUri ?? string.Empty),
+            requested?.AbsoluteUri,
             StringComparison.Ordinal);
     }
 
