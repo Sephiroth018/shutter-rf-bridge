@@ -7,7 +7,7 @@ namespace ShutterRfBridge.Weather;
 public record Nowcast(DateTimeOffset ReferenceTime, double? Millimetres)
 {
     /// <summary>The nowcast's time resolution.</summary>
-    public static readonly TimeSpan StepLength = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan StepLength = TimeSpan.FromMinutes(15);
 
     /// <summary>The time of the step <paramref name="time" /> falls in: rounded down to <see cref="StepLength" />, in UTC.</summary>
     public static DateTimeOffset StepTimeAt(DateTimeOffset time) =>

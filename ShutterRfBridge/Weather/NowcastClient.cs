@@ -34,14 +34,13 @@ public class NowcastClient
     /// <exception cref="TaskCanceledException">The request timed out or was cancelled.</exception>
     /// <exception cref="JsonException">The response isn't a nowcast for one point and that step.</exception>
     public async Task<Nowcast> GetStepAsync(
-        double latitude,
-        double longitude,
+        Coordinates location,
         DateTimeOffset stepTime,
         CancellationToken cancellationToken)
     {
         var time = stepTime.UtcDateTime.ToString(StepTimeFormat, CultureInfo.InvariantCulture);
         var url = string.Create(CultureInfo.InvariantCulture,
-            $"{DatasetAddress}?parameters=rr&lat_lon={latitude},{longitude}&start={time}&end={time}");
+            $"{DatasetAddress}?parameters=rr&lat_lon={location.Latitude},{location.Longitude}&start={time}&end={time}");
         var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url, JsonOptions, cancellationToken)
                        ?? throw new JsonException("The nowcast response is null.");
         return response.ToNowcast(stepTime);

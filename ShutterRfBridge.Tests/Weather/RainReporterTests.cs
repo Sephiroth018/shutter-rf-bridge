@@ -10,7 +10,7 @@ namespace ShutterRfBridge.Tests.Weather;
 
 public sealed class RainReporterTests : IDisposable
 {
-    private static readonly DateTimeOffset StepTime = new(2026, 11, 23, 18, 30, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset StepTime = NowcastResponseBuilder.CurrentStepTime;
 
     private readonly SubstitutableHttpMessageHandler _handler = Substitute.For<SubstitutableHttpMessageHandler>();
     private readonly HttpClient _httpClient;
@@ -35,7 +35,7 @@ public sealed class RainReporterTests : IDisposable
     public async Task ReportAsync_TimeWithinTheStep_ReturnsThatStepsMillimetres(double minutesIntoStep)
     {
         _timeProvider.SetUtcNow(StepTime.AddMinutes(minutesIntoStep));
-        Respond(new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
 
         var millimetres = await ReportAsync();
 
@@ -46,7 +46,8 @@ public sealed class RainReporterTests : IDisposable
     public async Task ReportAsync_RunExactlyAnHourOld_ReturnsTheMillimetres()
     {
         _timeProvider.SetUtcNow(NowcastResponseBuilder.DefaultReferenceTime.AddHours(1));
-        Respond(new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(45), 0.3).Build());
+        _handler.Respond(HttpStatusCode.OK,
+            new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(45), 0.3).Build());
 
         var millimetres = await ReportAsync();
 
@@ -57,7 +58,8 @@ public sealed class RainReporterTests : IDisposable
     public async Task ReportAsync_RunOlderThanAnHour_ReturnsUnknownAndLogsTheRun()
     {
         _timeProvider.SetUtcNow(NowcastResponseBuilder.DefaultReferenceTime.AddMinutes(61));
-        Respond(new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(45), 0.3).Build());
+        _handler.Respond(HttpStatusCode.OK,
+            new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(45), 0.3).Build());
 
         var millimetres = await ReportAsync();
 
@@ -70,7 +72,7 @@ public sealed class RainReporterTests : IDisposable
     [Fact]
     public async Task ReportAsync_NoValueForTheStep_ReturnsUnknownAndLogsTheStep()
     {
-        Respond(new NowcastResponseBuilder().WithStep(StepTime, null).Build());
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, null).Build());
 
         var millimetres = await ReportAsync();
 
@@ -95,10 +97,4 @@ public sealed class RainReporterTests : IDisposable
         new(new NowcastClient(_httpClient),
             Options.Create(new WeatherOptions { Location = location, RequestTimeout = TimeSpan.FromSeconds(5) }),
             _timeProvider, new RainReportLog(_logger));
-
-    private void Respond(string json)
-    {
-        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
-            .Returns(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json) });
-    }
 }

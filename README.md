@@ -267,7 +267,8 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 - **A number:** the millimetres of rain in the current 15 minutes at the house, with a decimal
   point (`0`, `0.3`).
 - **`unknown`:** no location is configured, GeoSphere didn't answer within `Weather:RequestTimeout`
-  or answered with an error, or its latest nowcast run is older than an hour.
+  or answered with an error or something unreadable, its latest nowcast run is older than an
+  hour, or the run has no value for the current 15 minutes.
 
 Each request fetches the current step of GeoSphere Austria's 1 km rain nowcast
 (`nowcast-v1-15min-1km`); nothing is cached. To try it on the Pi:

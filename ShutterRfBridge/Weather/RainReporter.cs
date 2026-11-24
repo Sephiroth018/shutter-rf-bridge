@@ -42,7 +42,7 @@ public class RainReporter
         Nowcast nowcast;
         try
         {
-            nowcast = await _client.GetStepAsync(location.Latitude, location.Longitude, stepTime, cancellationToken);
+            nowcast = await _client.GetStepAsync(location, stepTime, cancellationToken);
         }
         catch (HttpRequestException exception)
         {

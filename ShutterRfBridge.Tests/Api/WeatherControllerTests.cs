@@ -9,8 +9,8 @@ namespace ShutterRfBridge.Tests.Api;
 
 public sealed class WeatherControllerTests : IAsyncDisposable
 {
-    private static readonly DateTimeOffset Now = new(2026, 11, 23, 18, 44, 0, TimeSpan.Zero);
-    private static readonly DateTimeOffset StepTime = new(2026, 11, 23, 18, 30, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset StepTime = NowcastResponseBuilder.CurrentStepTime;
+    private static readonly DateTimeOffset Now = StepTime.AddMinutes(14);
 
     private readonly BridgeApplication _application = new();
 
@@ -27,7 +27,8 @@ public sealed class WeatherControllerTests : IAsyncDisposable
     [Fact]
     public async Task Rain_CurrentStep_ReturnsItsAmountAsPlainText()
     {
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
+        _application.NowcastHandler.Respond(HttpStatusCode.OK,
+            new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
 
         var response = await _application.GetAsync("/weather/rain");
 
@@ -39,7 +40,7 @@ public sealed class WeatherControllerTests : IAsyncDisposable
     [Fact]
     public async Task Rain_UnsuccessfulStatus_ReturnsUnknown()
     {
-        Respond(HttpStatusCode.TooManyRequests, string.Empty);
+        _application.NowcastHandler.Respond(HttpStatusCode.TooManyRequests, string.Empty);
 
         var response = await _application.GetAsync("/weather/rain");
 
@@ -61,17 +62,11 @@ public sealed class WeatherControllerTests : IAsyncDisposable
     [Fact]
     public async Task Rain_UnreadableResponse_ReturnsUnknown()
     {
-        Respond(HttpStatusCode.OK, "{");
+        _application.NowcastHandler.Respond(HttpStatusCode.OK, "{");
 
         var response = await _application.GetAsync("/weather/rain");
 
         Assert.Equal("unknown", await ReadBody(response));
-    }
-
-    private void Respond(HttpStatusCode status, string json)
-    {
-        _application.NowcastHandler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
-            .Returns(_ => new HttpResponseMessage(status) { Content = new StringContent(json) });
     }
 
     private static async Task<string> ReadBody(HttpResponse response)

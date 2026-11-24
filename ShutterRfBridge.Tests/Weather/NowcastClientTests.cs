@@ -8,7 +8,8 @@ namespace ShutterRfBridge.Tests.Weather;
 
 public sealed class NowcastClientTests : IDisposable
 {
-    private static readonly DateTimeOffset StepTime = new(2026, 11, 23, 18, 30, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset StepTime = NowcastResponseBuilder.CurrentStepTime;
+    private static readonly Coordinates Location = new(47.5, 13.25);
 
     private readonly NowcastClient _client;
     private readonly SubstitutableHttpMessageHandler _handler = Substitute.For<SubstitutableHttpMessageHandler>();
@@ -30,7 +31,8 @@ public sealed class NowcastClientTests : IDisposable
     public async Task GetStepAsync_AnyStep_RequestsTheStepAtTheCoordinates()
     {
         Uri? requested = null;
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build(), request => requested = request.RequestUri);
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build(),
+            request => requested = request.RequestUri);
 
         await GetStepAsync();
 
@@ -43,9 +45,10 @@ public sealed class NowcastClientTests : IDisposable
     public async Task GetStepAsync_StepTimeWithOffset_RequestsItInUtc()
     {
         Uri? requested = null;
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build(), request => requested = request.RequestUri);
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build(),
+            request => requested = request.RequestUri);
 
-        await _client.GetStepAsync(47.5, 13.25, StepTime.ToOffset(TimeSpan.FromHours(1)),
+        await _client.GetStepAsync(Location, StepTime.ToOffset(TimeSpan.FromHours(1)),
             TestContext.Current.CancellationToken);
 
         Assert.EndsWith("&start=2026-11-23T18:30:00Z&end=2026-11-23T18:30:00Z",
@@ -56,7 +59,7 @@ public sealed class NowcastClientTests : IDisposable
     [Fact]
     public async Task GetStepAsync_ResponseWithTheStep_ReturnsTheRunAndItsMillimetres()
     {
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
 
         var nowcast = await GetStepAsync();
 
@@ -66,7 +69,7 @@ public sealed class NowcastClientTests : IDisposable
     [Fact]
     public async Task GetStepAsync_StepWithoutValue_ReturnsNoMillimetres()
     {
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, null).Build());
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, null).Build());
 
         var nowcast = await GetStepAsync();
 
@@ -76,7 +79,7 @@ public sealed class NowcastClientTests : IDisposable
     [Fact]
     public async Task GetStepAsync_RunNotCoveringTheStep_ReturnsNoMillimetres()
     {
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build());
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build());
 
         var nowcast = await GetStepAsync();
 
@@ -86,7 +89,8 @@ public sealed class NowcastClientTests : IDisposable
     [Fact]
     public async Task GetStepAsync_StepOfAnotherTime_ThrowsJsonException()
     {
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(15), 0.3).Build());
+        _handler.Respond(HttpStatusCode.OK,
+            new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(15), 0.3).Build());
 
         await Assert.ThrowsAsync<JsonException>(GetStepAsync);
     }
@@ -94,7 +98,7 @@ public sealed class NowcastClientTests : IDisposable
     [Fact]
     public async Task GetStepAsync_TwoSteps_ThrowsJsonException()
     {
-        Respond(HttpStatusCode.OK,
+        _handler.Respond(HttpStatusCode.OK,
             new NowcastResponseBuilder().WithStep(StepTime, 0.1).WithStep(StepTime.AddMinutes(15), 0.3).Build());
 
         await Assert.ThrowsAsync<JsonException>(GetStepAsync);
@@ -106,7 +110,7 @@ public sealed class NowcastClientTests : IDisposable
     [InlineData(HttpStatusCode.InternalServerError)]
     public async Task GetStepAsync_UnsuccessfulStatus_ThrowsHttpRequestException(HttpStatusCode status)
     {
-        Respond(status, """{"detail":"Requested point is outside of dataset bounds!"}""");
+        _handler.Respond(status, """{"detail":"Requested point is outside of dataset bounds!"}""");
 
         await Assert.ThrowsAsync<HttpRequestException>(GetStepAsync);
     }
@@ -117,7 +121,7 @@ public sealed class NowcastClientTests : IDisposable
     [InlineData("""{"timestamps":[],"features":[]}""")]
     public async Task GetStepAsync_NotANowcast_ThrowsJsonException(string json)
     {
-        Respond(HttpStatusCode.OK, json);
+        _handler.Respond(HttpStatusCode.OK, json);
 
         await Assert.ThrowsAnyAsync<JsonException>(GetStepAsync);
     }
@@ -125,7 +129,7 @@ public sealed class NowcastClientTests : IDisposable
     [Fact]
     public async Task GetStepAsync_TwoPoints_ThrowsJsonException()
     {
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithFeatureCount(2).Build());
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithFeatureCount(2).Build());
 
         await Assert.ThrowsAsync<JsonException>(GetStepAsync);
     }
@@ -133,21 +137,14 @@ public sealed class NowcastClientTests : IDisposable
     [Fact]
     public async Task GetStepAsync_MoreValuesThanTimestamps_ThrowsJsonException()
     {
-        Respond(HttpStatusCode.OK, """
-                                   {"reference_time":"2026-11-23T18:15+00:00","timestamps":[],
-                                    "features":[{"properties":{"parameters":{"rr":{"data":[0.0]}}}}]}
-                                   """);
+        _handler.Respond(HttpStatusCode.OK, """
+                                            {"reference_time":"2026-11-23T18:15+00:00","timestamps":[],
+                                             "features":[{"properties":{"parameters":{"rr":{"data":[0.0]}}}}]}
+                                            """);
 
         await Assert.ThrowsAsync<JsonException>(GetStepAsync);
     }
 
     private Task<Nowcast> GetStepAsync() =>
-        _client.GetStepAsync(47.5, 13.25, StepTime, TestContext.Current.CancellationToken);
-
-    private void Respond(HttpStatusCode status, string json, Action<HttpRequestMessage>? onRequest = null)
-    {
-        _handler.SendRequestAsync(Arg.Do<HttpRequestMessage>(request => onRequest?.Invoke(request)),
-                Arg.Any<CancellationToken>())
-            .Returns(_ => new HttpResponseMessage(status) { Content = new StringContent(json) });
-    }
+        _client.GetStepAsync(Location, StepTime, TestContext.Current.CancellationToken);
 }

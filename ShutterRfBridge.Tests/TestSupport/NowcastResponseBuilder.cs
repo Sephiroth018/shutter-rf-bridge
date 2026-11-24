@@ -8,6 +8,9 @@ internal sealed class NowcastResponseBuilder
 {
     public static readonly DateTimeOffset DefaultReferenceTime = new(2026, 11, 23, 18, 15, 0, TimeSpan.Zero);
 
+    /// <summary>The step after the run's reference time, which the tests take as the current one.</summary>
+    public static readonly DateTimeOffset CurrentStepTime = DefaultReferenceTime.AddMinutes(15);
+
     private readonly List<(DateTimeOffset Time, double? Millimetres)> _steps = [];
     private int _featureCount = 1;
 

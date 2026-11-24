@@ -12,26 +12,27 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
 
     public ValidateOptionsResult Validate(string? name, WeatherOptions options)
     {
-        List<string?> failures = [];
+        List<string> failures = [];
         if (options.Location is { } location)
         {
-            failures.Add(ValidateCoordinate(nameof(Coordinates.Latitude), location.Latitude, Coordinates.MaxLatitude));
-            failures.Add(ValidateCoordinate(nameof(Coordinates.Longitude), location.Longitude,
-                Coordinates.MaxLongitude));
+            AddCoordinateFailure(failures, nameof(Coordinates.Latitude), location.Latitude, Coordinates.MaxLatitude);
+            AddCoordinateFailure(failures, nameof(Coordinates.Longitude), location.Longitude,
+                Coordinates.MaxLongitude);
         }
 
-        failures.Add(ValidateRequestTimeout(options.RequestTimeout));
-        var messages = failures.OfType<string>().ToList();
-        return messages.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(messages);
+        if (options.RequestTimeout <= TimeSpan.Zero)
+        {
+            failures.Add($"{WeatherOptions.SectionName}:{nameof(WeatherOptions.RequestTimeout)} must be positive.");
+        }
+
+        return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }
 
-    private static string? ValidateCoordinate(string coordinateName, double degrees, double max) =>
-        !double.IsFinite(degrees) || Math.Abs(degrees) > max
-            ? $"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}."
-            : null;
-
-    private static string? ValidateRequestTimeout(TimeSpan timeout) =>
-        timeout <= TimeSpan.Zero
-            ? $"{WeatherOptions.SectionName}:{nameof(WeatherOptions.RequestTimeout)} must be positive."
-            : null;
+    private static void AddCoordinateFailure(List<string> failures, string coordinateName, double degrees, double max)
+    {
+        if (!double.IsFinite(degrees) || Math.Abs(degrees) > max)
+        {
+            failures.Add($"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}.");
+        }
+    }
 }
