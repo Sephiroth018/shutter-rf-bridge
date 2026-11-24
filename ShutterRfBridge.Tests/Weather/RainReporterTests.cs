@@ -1,0 +1,104 @@
+using System.Net;
+using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
+using NSubstitute;
+using ShutterRfBridge.Tests.TestSupport;
+using ShutterRfBridge.Weather;
+
+namespace ShutterRfBridge.Tests.Weather;
+
+public sealed class RainReporterTests : IDisposable
+{
+    private static readonly DateTimeOffset StepTime = new(2026, 11, 23, 18, 30, 0, TimeSpan.Zero);
+
+    private readonly SubstitutableHttpMessageHandler _handler = Substitute.For<SubstitutableHttpMessageHandler>();
+    private readonly HttpClient _httpClient;
+    private readonly FakeLogger<RainReportLog> _logger = new();
+    private readonly FakeTimeProvider _timeProvider = new(StepTime);
+
+    public RainReporterTests()
+    {
+        _httpClient = new HttpClient(_handler);
+    }
+
+    public void Dispose()
+    {
+        _httpClient.Dispose();
+        _handler.Dispose();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(14)]
+    [InlineData(14.999)]
+    public async Task ReportAsync_TimeWithinTheStep_ReturnsThatStepsMillimetres(double minutesIntoStep)
+    {
+        _timeProvider.SetUtcNow(StepTime.AddMinutes(minutesIntoStep));
+        Respond(new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Equal(0.3, millimetres);
+    }
+
+    [Fact]
+    public async Task ReportAsync_RunExactlyAnHourOld_ReturnsTheMillimetres()
+    {
+        _timeProvider.SetUtcNow(NowcastResponseBuilder.DefaultReferenceTime.AddHours(1));
+        Respond(new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(45), 0.3).Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Equal(0.3, millimetres);
+    }
+
+    [Fact]
+    public async Task ReportAsync_RunOlderThanAnHour_ReturnsUnknownAndLogsTheRun()
+    {
+        _timeProvider.SetUtcNow(NowcastResponseBuilder.DefaultReferenceTime.AddMinutes(61));
+        Respond(new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(45), 0.3).Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Null(millimetres);
+        Assert.Equal(
+            "The rain is now unknown: the latest nowcast run, from 2026-11-23 18:15:00Z, is older than 01:00:00",
+            _logger.LatestRecord.Message);
+    }
+
+    [Fact]
+    public async Task ReportAsync_NoValueForTheStep_ReturnsUnknownAndLogsTheStep()
+    {
+        Respond(new NowcastResponseBuilder().WithStep(StepTime, null).Build());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Null(millimetres);
+        Assert.Equal("The rain is now unknown: the nowcast has no value for 2026-11-23 18:30:00Z",
+            _logger.LatestRecord.Message);
+    }
+
+    [Fact]
+    public async Task ReportAsync_NoLocation_ReturnsUnknownWithoutARequest()
+    {
+        var millimetres = await CreateReporter(null).ReportAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(millimetres);
+        await _handler.DidNotReceive().SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>());
+    }
+
+    private Task<double?> ReportAsync() =>
+        CreateReporter(new Coordinates(47.5, 13.25)).ReportAsync(TestContext.Current.CancellationToken);
+
+    private RainReporter CreateReporter(Coordinates? location) =>
+        new(new NowcastClient(_httpClient),
+            Options.Create(new WeatherOptions { Location = location, RequestTimeout = TimeSpan.FromSeconds(5) }),
+            _timeProvider, new RainReportLog(_logger));
+
+    private void Respond(string json)
+    {
+        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json) });
+    }
+}

@@ -49,9 +49,10 @@ built-in settings:
 sudo nano /etc/shutter-rf-bridge/appsettings.json
 ```
 
-Fill in `RemoteId` and the CCU's IP address as the first entry of `AllowedClients`, and, for the
-rain, the house's `Latitude` and `Longitude`; the comments in the file explain each value, and [Configuration](#configuration) has the details. Once the service
-is installed, restart it after every change:
+Fill in `RemoteId` and the CCU's IP address as the first entry of `AllowedClients`. For the rain,
+remove the `//` in front of the `Location` block and fill in the house's `Latitude` and
+`Longitude`. The comments in the file explain each value, and [Configuration](#configuration) has
+the details. Once the service is installed, restart it after every change:
 
 ```bash
 sudo systemctl restart shutter-rf-bridge
@@ -296,12 +297,12 @@ The settings:
 |---|---|
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
 | `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list. |
-| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain; both or neither. |
+| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain; both, or the whole `Location` block left out. |
 | `Weather:RequestTimeout` | How long the request to GeoSphere may take: `00:00:05` by default, below the CCU3's `curl -m 10`. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
 The service doesn't start if the remote ID is missing or too large, the allow-list is empty, an
-entry isn't an IP address, only one coordinate is set or one is out of range, or the request timeout
+entry isn't an IP address, a coordinate is missing, empty or out of range, or the request timeout
 isn't positive; the journal says which.
 
 **Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
@@ -314,8 +315,7 @@ Its made-up location is in Austria, so the rain endpoint fetches real nowcast da
 The service logs with [NLog](https://nlog-project.org/):
 
 - **Debug:** each rain answer, with its reason when it's unknown.
-- **Information:** each command received, each timed Stop queued and each command sent, and a
-  change of the rain between dry and raining.
+- **Information:** each command received, each timed Stop queued and each command sent.
 - **Warning:** refused and rejected requests, and the rain becoming unknown, with the reason;
   further unknown answers during the same outage stay at debug level.
 - **Error:** a command that failed to send, after which the service goes on with the next one, and

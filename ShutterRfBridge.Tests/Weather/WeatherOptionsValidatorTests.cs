@@ -9,7 +9,7 @@ public sealed class WeatherOptionsValidatorTests
     [Fact]
     public void Validate_ValidOptions_Succeeds()
     {
-        var result = _validator.Validate(null, Options(new Coordinates { Latitude = 47.5, Longitude = 13.5 }));
+        var result = _validator.Validate(null, Options(new Coordinates(47.5, 13.5)));
 
         Assert.True(result.Succeeded);
     }
@@ -22,22 +22,6 @@ public sealed class WeatherOptionsValidatorTests
         Assert.True(result.Succeeded);
     }
 
-    [Fact]
-    public void Validate_BothCoordinatesEmpty_Succeeds()
-    {
-        var result = _validator.Validate(null, Options(new Coordinates()));
-
-        Assert.True(result.Succeeded);
-    }
-
-    [Fact]
-    public void Validate_OnlyLatitude_FailsNamingTheLongitude()
-    {
-        var result = _validator.Validate(null, Options(new Coordinates { Latitude = 47.5 }));
-
-        Assert.Equal(["Weather:Location:Longitude is missing."], result.Failures);
-    }
-
     [Theory]
     [InlineData(91, 13.5, "Weather:Location:Latitude 91 is outside -90 to 90.")]
     [InlineData(-91, 13.5, "Weather:Location:Latitude -91 is outside -90 to 90.")]
@@ -46,7 +30,7 @@ public sealed class WeatherOptionsValidatorTests
     [InlineData(double.NaN, 13.5, "Weather:Location:Latitude NaN is outside -90 to 90.")]
     public void Validate_CoordinateOutOfRange_FailsNamingIt(double latitude, double longitude, string failure)
     {
-        var result = _validator.Validate(null, Options(new Coordinates { Latitude = latitude, Longitude = longitude }));
+        var result = _validator.Validate(null, Options(new Coordinates(latitude, longitude)));
 
         Assert.Equal([failure], result.Failures);
     }

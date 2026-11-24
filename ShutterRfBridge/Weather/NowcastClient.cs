@@ -27,12 +27,12 @@ public class NowcastClient
     }
 
     /// <summary>
-    ///     Gets the latest run with its step at <paramref name="stepTime" />; the run has no step when it doesn't cover
-    ///     that time.
+    ///     Gets the latest run with its value for the step at <paramref name="stepTime" />; the run has no value when it
+    ///     doesn't cover that time.
     /// </summary>
     /// <exception cref="HttpRequestException">The request failed or didn't succeed.</exception>
     /// <exception cref="TaskCanceledException">The request timed out or was cancelled.</exception>
-    /// <exception cref="JsonException">The response isn't a nowcast for one point.</exception>
+    /// <exception cref="JsonException">The response isn't a nowcast for one point and that step.</exception>
     public async Task<Nowcast> GetStepAsync(
         double latitude,
         double longitude,
@@ -44,6 +44,6 @@ public class NowcastClient
             $"{DatasetAddress}?parameters=rr&lat_lon={latitude},{longitude}&start={time}&end={time}");
         var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url, JsonOptions, cancellationToken)
                        ?? throw new JsonException("The nowcast response is null.");
-        return response.ToNowcast();
+        return response.ToNowcast(stepTime);
     }
 }

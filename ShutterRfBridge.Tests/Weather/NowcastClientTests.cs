@@ -54,34 +54,41 @@ public sealed class NowcastClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetStepAsync_ResponseWithStep_ReturnsTheRunAndItsStep()
+    public async Task GetStepAsync_ResponseWithTheStep_ReturnsTheRunAndItsMillimetres()
     {
         Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, 0.3).Build());
 
         var nowcast = await GetStepAsync();
 
-        Assert.Equal(NowcastResponseBuilder.DefaultReferenceTime, nowcast.ReferenceTime);
-        Assert.Equal(new NowcastStep(StepTime, 0.3), nowcast.Step);
+        Assert.Equal(new Nowcast(NowcastResponseBuilder.DefaultReferenceTime, 0.3), nowcast);
     }
 
     [Fact]
-    public async Task GetStepAsync_StepWithoutValue_ReturnsNoStep()
+    public async Task GetStepAsync_StepWithoutValue_ReturnsNoMillimetres()
     {
         Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, null).Build());
 
         var nowcast = await GetStepAsync();
 
-        Assert.Null(nowcast.Step);
+        Assert.Null(nowcast.Millimetres);
     }
 
     [Fact]
-    public async Task GetStepAsync_RunNotCoveringTheStep_ReturnsNoStep()
+    public async Task GetStepAsync_RunNotCoveringTheStep_ReturnsNoMillimetres()
     {
         Respond(HttpStatusCode.OK, new NowcastResponseBuilder().Build());
 
         var nowcast = await GetStepAsync();
 
-        Assert.Null(nowcast.Step);
+        Assert.Null(nowcast.Millimetres);
+    }
+
+    [Fact]
+    public async Task GetStepAsync_StepOfAnotherTime_ThrowsJsonException()
+    {
+        Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime.AddMinutes(15), 0.3).Build());
+
+        await Assert.ThrowsAsync<JsonException>(GetStepAsync);
     }
 
     [Fact]

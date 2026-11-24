@@ -23,7 +23,16 @@ public sealed class ProgramTests : IAsyncDisposable
     }
 
     [Theory]
-    [InlineData("Weather:Location:Longitude", "")]
+    [InlineData("")]
+    [InlineData("east")]
+    public async Task Main_UnreadableCoordinate_FailsTheStartup(string longitude)
+    {
+        _application.SetSetting("Weather:Location:Longitude", longitude);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _application.PostAsync("/shutters/3/stop"));
+    }
+
+    [Theory]
     [InlineData("Weather:Location:Latitude", "91")]
     [InlineData("Weather:RequestTimeout", "-00:00:01")]
     public async Task Main_InvalidWeatherSetting_FailsTheStartup(string key, string value)

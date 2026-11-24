@@ -1,50 +1,42 @@
 namespace ShutterRfBridge.Weather;
 
 /// <summary>
-///     Logs every report at debug level and only changes of its <see cref="RainCondition" /> above it, since the CCU3
-///     asks every 15 minutes. A change to unknown is a warning; further unknown reports during an outage aren't.
+///     Logs every rain report at debug level, since the CCU3 asks every 15 minutes, and a warning when the rain becomes
+///     unknown; further unknown reports during an outage stay at debug.
 /// </summary>
 public partial class RainReportLog
 {
-    private readonly Lock _lock = new();
     private readonly ILogger<RainReportLog> _logger;
-    private RainCondition? _condition;
+    private bool _isUnknown;
 
     public RainReportLog(ILogger<RainReportLog> logger)
     {
         _logger = logger;
     }
 
-    public void Record(RainReport report)
+    public void RecordAmount(double millimetres)
     {
-        LogReport(report);
-        RainCondition? previous;
-        lock (_lock)
-        {
-            previous = _condition;
-            _condition = report.Condition;
-        }
+        LogAmount(millimetres);
+        _isUnknown = false;
+    }
 
-        if (previous == report.Condition)
+    public void RecordUnknown(string reason)
+    {
+        if (_isUnknown)
         {
+            LogStillUnknown(reason);
             return;
         }
 
-        if (report is RainUnknown unknown)
-        {
-            LogUnknown(unknown.Reason);
-        }
-        else
-        {
-            LogChanged(report.Condition, report);
-        }
+        _isUnknown = true;
+        LogUnknown(reason);
     }
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Reporting {Report}")]
-    private partial void LogReport(RainReport report);
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Reporting {Millimetres} mm of rain")]
+    private partial void LogAmount(double millimetres);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "The rain is now {Condition}: {Report}")]
-    private partial void LogChanged(RainCondition condition, RainReport report);
+    [LoggerMessage(Level = LogLevel.Debug, Message = "The rain is still unknown: {Reason}")]
+    private partial void LogStillUnknown(string reason);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The rain is now unknown: {Reason}")]
     private partial void LogUnknown(string reason);

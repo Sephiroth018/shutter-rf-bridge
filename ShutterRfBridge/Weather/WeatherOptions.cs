@@ -5,7 +5,7 @@ public class WeatherOptions
 {
     public const string SectionName = "Weather";
 
-    /// <summary>The house's location; with neither coordinate set, the rain is always unknown.</summary>
+    /// <summary>The house's location; without it, the rain is always unknown.</summary>
     public Coordinates? Location { get; init; }
 
     /// <summary>How long the request for the nowcast may take.</summary>

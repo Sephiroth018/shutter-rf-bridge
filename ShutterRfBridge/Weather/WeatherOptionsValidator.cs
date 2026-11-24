@@ -3,8 +3,8 @@ using Microsoft.Extensions.Options;
 namespace ShutterRfBridge.Weather;
 
 /// <summary>
-///     Fails the startup when <see cref="WeatherOptions" /> are invalid. Leaving both coordinates out is valid: the rain
-///     is a bonus, so the shutters work without it.
+///     Fails the startup when <see cref="WeatherOptions" /> are invalid. Leaving the location out is valid: the rain is a
+///     bonus, so the shutters work without it.
 /// </summary>
 internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
 {
@@ -13,7 +13,7 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
     public ValidateOptionsResult Validate(string? name, WeatherOptions options)
     {
         List<string?> failures = [];
-        if (options.Location is { } location && (location.Latitude is not null || location.Longitude is not null))
+        if (options.Location is { } location)
         {
             failures.Add(ValidateCoordinate(nameof(Coordinates.Latitude), location.Latitude, Coordinates.MaxLatitude));
             failures.Add(ValidateCoordinate(nameof(Coordinates.Longitude), location.Longitude,
@@ -25,14 +25,10 @@ internal sealed class WeatherOptionsValidator : IValidateOptions<WeatherOptions>
         return messages.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(messages);
     }
 
-    private static string? ValidateCoordinate(string coordinateName, double? coordinate, double max) =>
-        coordinate switch
-        {
-            null => $"{LocationKey}:{coordinateName} is missing.",
-            { } degrees when !double.IsFinite(degrees) || Math.Abs(degrees) > max =>
-                $"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}.",
-            _ => null
-        };
+    private static string? ValidateCoordinate(string coordinateName, double degrees, double max) =>
+        !double.IsFinite(degrees) || Math.Abs(degrees) > max
+            ? $"{LocationKey}:{coordinateName} {degrees} is outside -{max} to {max}."
+            : null;
 
     private static string? ValidateRequestTimeout(TimeSpan timeout) =>
         timeout <= TimeSpan.Zero

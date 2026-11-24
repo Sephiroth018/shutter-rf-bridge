@@ -11,9 +11,12 @@ internal sealed record NowcastResponse(
     IReadOnlyList<DateTimeOffset> Timestamps,
     IReadOnlyList<NowcastResponse.Feature> Features)
 {
-    /// <summary>The run with its one step, which is missing when the response has no timestamp or no value.</summary>
-    /// <exception cref="JsonException">The response isn't one point with at most one step.</exception>
-    public Nowcast ToNowcast()
+    /// <summary>
+    ///     The run with its value for the step at <paramref name="stepTime" />, which is missing when the response has no
+    ///     timestamp or no value.
+    /// </summary>
+    /// <exception cref="JsonException">The response isn't one point with at most that one step.</exception>
+    public Nowcast ToNowcast(DateTimeOffset stepTime)
     {
         if (Features is not [var feature])
         {
@@ -27,8 +30,13 @@ internal sealed record NowcastResponse(
                 $"The nowcast response has {amounts.Count} values for {Timestamps.Count} timestamps instead of at most one step.");
         }
 
-        var step = (Timestamps, amounts) is ([var time], [{ } millimetres]) ? new NowcastStep(time, millimetres) : null;
-        return new Nowcast(ReferenceTime, step);
+        if (Timestamps is [var time] && time != stepTime)
+        {
+            throw new JsonException(
+                $"The nowcast response's step at {time:u} isn't the one asked for, at {stepTime:u}.");
+        }
+
+        return new Nowcast(ReferenceTime, amounts is [var millimetres] ? millimetres : null);
     }
 
     internal sealed record Feature(FeatureProperties Properties);

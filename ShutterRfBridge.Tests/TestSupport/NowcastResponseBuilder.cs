@@ -10,13 +10,6 @@ internal sealed class NowcastResponseBuilder
 
     private readonly List<(DateTimeOffset Time, double? Millimetres)> _steps = [];
     private int _featureCount = 1;
-    private DateTimeOffset _referenceTime = DefaultReferenceTime;
-
-    public NowcastResponseBuilder WithReferenceTime(DateTimeOffset referenceTime)
-    {
-        _referenceTime = referenceTime;
-        return this;
-    }
 
     public NowcastResponseBuilder WithStep(DateTimeOffset time, double? millimetres)
     {
@@ -34,7 +27,7 @@ internal sealed class NowcastResponseBuilder
     {
         var response = new JsonObject
         {
-            ["reference_time"] = Format(_referenceTime),
+            ["reference_time"] = Format(DefaultReferenceTime),
             ["media_type"] = "application/json",
             ["type"] = "FeatureCollection",
             ["version"] = "v1",

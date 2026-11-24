@@ -68,32 +68,6 @@ public sealed class WeatherControllerTests : IAsyncDisposable
         Assert.Equal("unknown", await ReadBody(response));
     }
 
-    [Fact]
-    public async Task Rain_StaleRun_ReturnsUnknown()
-    {
-        Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
-            .WithReferenceTime(Now.AddHours(-2))
-            .WithStep(StepTime, 0.3)
-            .Build());
-
-        var response = await _application.GetAsync("/weather/rain");
-
-        Assert.Equal("unknown", await ReadBody(response));
-    }
-
-    [Fact]
-    public async Task Rain_NoLocation_ReturnsUnknownWithoutARequest()
-    {
-        _application.SetSetting("Weather:Location:Latitude", string.Empty);
-        _application.SetSetting("Weather:Location:Longitude", string.Empty);
-
-        var response = await _application.GetAsync("/weather/rain");
-
-        Assert.Equal("unknown", await ReadBody(response));
-        await _application.NowcastHandler.DidNotReceive()
-            .SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>());
-    }
-
     private void Respond(HttpStatusCode status, string json)
     {
         _application.NowcastHandler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())

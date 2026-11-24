@@ -82,15 +82,15 @@ public sealed class SettingsFileConfigurationTests : IDisposable
     }
 
     [Fact]
-    public void AddSettingsFile_DeployTemplate_BindsItsEmptyCoordinatesAsUnset()
+    public void AddSettingsFile_DeployTemplate_LeavesTheLocationOut()
     {
         var deployDirectory = Path.Combine(AppContext.BaseDirectory, "deploy");
         using var configuration = CreateServiceConfiguration();
 
         configuration.AddSettingsFile(deployDirectory);
 
-        var location = configuration.GetSection(WeatherOptions.SectionName).Get<WeatherOptions>()?.Location;
-        Assert.Equal((null, null), (location?.Latitude, location?.Longitude));
+        Assert.False(configuration.GetSection($"{WeatherOptions.SectionName}:{nameof(WeatherOptions.Location)}")
+            .Exists());
     }
 
     /// <summary>The configuration sources the service's own builder has, with the built-in files from the test's folder.</summary>
