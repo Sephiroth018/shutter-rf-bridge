@@ -53,5 +53,20 @@ public sealed class RainReportLogTests
         Assert.Equal([LogLevel.Warning, LogLevel.Debug, LogLevel.Warning], LoggedLevels());
     }
 
+    [Fact]
+    public void RecordUnusableLocation_EveryTime_LogsAWarningWithTheProblem()
+    {
+        _log.RecordUnusableLocation("Weather:Location is missing.");
+
+        _log.RecordUnusableLocation("Weather:Location is missing.");
+
+        Assert.Equal(
+            [
+                (LogLevel.Warning, "The rain is unavailable: Weather:Location is missing."),
+                (LogLevel.Warning, "The rain is unavailable: Weather:Location is missing.")
+            ],
+            _logger.Collector.GetSnapshot().Select(record => (record.Level, record.Message)));
+    }
+
     private List<LogLevel> LoggedLevels() => [.. _logger.Collector.GetSnapshot().Select(record => record.Level)];
 }

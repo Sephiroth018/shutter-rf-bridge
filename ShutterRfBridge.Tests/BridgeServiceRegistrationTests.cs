@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using ShutterRfBridge.Tests.TestSupport;
+using ShutterRfBridge.Weather;
 
 namespace ShutterRfBridge.Tests;
 
@@ -37,42 +38,51 @@ public sealed class BridgeServiceRegistrationTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("east")]
-    public void AddBridgeServices_UnreadableCoordinate_FailsTheStartupValidation(string longitude)
+    [InlineData("47.5", "")]
+    [InlineData("47.5", "east")]
+    [InlineData("47.5", null)]
+    [InlineData("91", "13.25")]
+    public void AddBridgeServices_UnusableLocation_PassesTheStartupValidation(string latitude, string? longitude)
     {
-        _settings["Weather:Location:Latitude"] = "47.5";
+        _settings["Weather:Location:Latitude"] = latitude;
         _settings["Weather:Location:Longitude"] = longitude;
 
-        Assert.Throws<InvalidOperationException>(ValidateStartup);
+        var exception = Record.Exception(ValidateStartup);
+
+        Assert.Null(exception);
     }
 
     [Fact]
-    public void AddBridgeServices_OnlyOneCoordinate_FailsTheStartupValidation()
+    public void AddBridgeServices_UnusableLocation_ProvidesItsProblem()
     {
         _settings["Weather:Location:Latitude"] = "47.5";
 
-        Assert.Throws<InvalidOperationException>(ValidateStartup);
-    }
+        var location = ResolveHouseLocation();
 
-    [Fact]
-    public void AddBridgeServices_CoordinateOutOfRange_FailsTheStartupValidation()
-    {
-        _settings["Weather:Location:Latitude"] = "91";
-        _settings["Weather:Location:Longitude"] = "13.25";
-
-        Assert.Throws<OptionsValidationException>(ValidateStartup);
+        Assert.Equal(new UnusableHouseLocation("Weather:Location:Longitude is missing or empty."), location);
     }
 
     private void ValidateStartup()
     {
-        var environment = Substitute.For<IHostEnvironment>();
-        environment.EnvironmentName.Returns(Environments.Development);
-        var services = new ServiceCollection()
-            .AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(_settings).Build())
-            .AddBridgeServices(environment);
-        using var provider = services.BuildServiceProvider();
+        using var provider = BuildServiceProvider();
 
         provider.GetRequiredService<IStartupValidator>().Validate();
+    }
+
+    private HouseLocation ResolveHouseLocation()
+    {
+        using var provider = BuildServiceProvider();
+
+        return provider.GetRequiredService<HouseLocation>();
+    }
+
+    private ServiceProvider BuildServiceProvider()
+    {
+        var environment = Substitute.For<IHostEnvironment>();
+        environment.EnvironmentName.Returns(Environments.Development);
+        return new ServiceCollection()
+            .AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(_settings).Build())
+            .AddBridgeServices(environment)
+            .BuildServiceProvider();
     }
 }

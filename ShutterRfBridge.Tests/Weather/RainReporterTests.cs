@@ -1,6 +1,5 @@
 using System.Net;
 using Microsoft.Extensions.Logging.Testing;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using ShutterRfBridge.Tests.TestSupport;
@@ -133,20 +132,7 @@ public sealed class RainReporterTests : IDisposable
             _logger.LatestRecord.Message);
     }
 
-    [Fact]
-    public async Task ReportAsync_NoLocation_ReturnsUnknownWithoutARequest()
-    {
-        var millimetres = await CreateReporter(null).ReportAsync(TestContext.Current.CancellationToken);
-
-        Assert.Null(millimetres);
-        await _handler.DidNotReceive().SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>());
-    }
-
     private Task<double?> ReportAsync() =>
-        CreateReporter(new Coordinates(47.5, 13.25)).ReportAsync(TestContext.Current.CancellationToken);
-
-    private RainReporter CreateReporter(Coordinates? location) =>
-        new(new NowcastClient(_httpClient),
-            Options.Create(new WeatherOptions { Location = location }),
-            _timeProvider, new RainReportLog(_logger));
+        new RainReporter(new NowcastClient(_httpClient), _timeProvider, new RainReportLog(_logger))
+            .ReportAsync(new Coordinates(47.5, 13.25), TestContext.Current.CancellationToken);
 }

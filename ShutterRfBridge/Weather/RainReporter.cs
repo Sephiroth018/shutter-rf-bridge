@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 
 namespace ShutterRfBridge.Weather;
 
@@ -15,32 +14,21 @@ public class RainReporter
 
     private readonly NowcastClient _client;
     private readonly RainReportLog _log;
-    private readonly WeatherOptions _options;
     private readonly TimeProvider _timeProvider;
 
-    public RainReporter(
-        NowcastClient client,
-        IOptions<WeatherOptions> options,
-        TimeProvider timeProvider,
-        RainReportLog log)
+    public RainReporter(NowcastClient client, TimeProvider timeProvider, RainReportLog log)
     {
         _client = client;
-        _options = options.Value;
         _timeProvider = timeProvider;
         _log = log;
     }
 
     /// <summary>
-    ///     The millimetres of rain in the heaviest of the next 15-minute steps, the current one included, or
-    ///     <see langword="null" /> when the current step's are unknown; the log gets the reason.
+    ///     The millimetres of rain at <paramref name="location" /> in the heaviest of the next 15-minute steps, the current
+    ///     one included, or <see langword="null" /> when the current step's are unknown; the log gets the reason.
     /// </summary>
-    public async Task<double?> ReportAsync(CancellationToken cancellationToken)
+    public async Task<double?> ReportAsync(Coordinates location, CancellationToken cancellationToken)
     {
-        if (_options.Location is not { } location)
-        {
-            return ReportUnknown("no location is configured");
-        }
-
         var now = _timeProvider.GetUtcNow();
         var stepTime = Nowcast.StepTimeAt(now);
         Nowcast nowcast;

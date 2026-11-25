@@ -263,14 +263,18 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 
 ### Rain
 
-`GET /weather/rain` answers `200 OK` with one line of plain text:
+`GET /weather/rain` answers `200 OK` with one line of plain text, unless the location is unusable:
 
 - **A number:** the millimetres of rain at the house in the heaviest 15 minutes among the current
   ones and the next two, with a decimal point (`0`, `0.3`). Looking ahead makes up for the
   nowcast's lag of about 30 minutes, so the rain shows before it arrives.
-- **`unknown`:** no location is configured, GeoSphere didn't answer within 5 seconds or
-  answered with an error or something unreadable, its latest nowcast run is older than an
-  hour, or the run has no value for the current 15 minutes.
+- **`unknown`:** GeoSphere didn't answer within 5 seconds or answered with an error or something
+  unreadable, its latest nowcast run is older than an hour, or the run has no value for the
+  current 15 minutes.
+
+Without a usable location (the `Location` block left out, or a coordinate missing, empty, not a
+number or out of range), it answers `500 Internal Server Error` with the problem as plain text,
+such as `Weather:Location is missing.`; the CCU3's `curl -f` then writes `unknown`.
 
 Each request fetches these three steps of GeoSphere Austria's 1 km rain nowcast
 (`nowcast-v1-15min-1km`); nothing is cached. To try it on the Pi:
@@ -300,12 +304,12 @@ The settings:
 |---|---|
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
 | `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list. |
-| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain; both, or the whole `Location` block left out. |
+| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain. Without both, the shutters still work, but the rain endpoint answers an error. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
-The service doesn't start if the remote ID is missing or too large, the allow-list is empty, an
-entry isn't an IP address, or a coordinate is missing, empty or out of range; the journal says
-which.
+The service doesn't start if the remote ID is missing or too large, the allow-list is empty, or an
+entry isn't an IP address; the journal says which. An unusable location doesn't stop it: it logs
+an error at startup naming the problem.
 
 **Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
 profile uses the Development environment, listening on `http://localhost:5080`. Development only
@@ -319,10 +323,11 @@ The service logs with [NLog](https://nlog-project.org/):
 - **Debug:** each rain answer, with its reason when it's unknown.
 - **Information:** each command received, each timed Stop queued and each command sent.
 - **Warning:** refused and rejected requests, and the rain becoming unknown, with the reason;
-  further unknown answers during the same outage stay at debug level.
-- **Error:** a command that failed to send, after which the service goes on with the next one, and
-  an unexpected error, which stops the service so that systemd restarts it (up to 5 times in 5
-  minutes).
+  further unknown answers during the same outage stay at debug level. While the location is
+  unusable, every rain request logs a warning.
+- **Error:** an unusable location, once at startup; a command that failed to send, after which the
+  service goes on with the next one; and an unexpected error, which stops the service so that
+  systemd restarts it (up to 5 times in 5 minutes).
 
 ASP.NET Core's own entries below warning level are left out, and the request to GeoSphere isn't
 logged by .NET itself, to spare the SD card.

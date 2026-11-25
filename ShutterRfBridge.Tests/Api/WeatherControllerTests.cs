@@ -69,6 +69,18 @@ public sealed class WeatherControllerTests : IAsyncDisposable
         Assert.Equal("unknown", await ReadBody(response));
     }
 
+    [Fact]
+    public async Task Rain_UnusableLocation_ReturnsAnErrorWithTheProblemAsPlainText()
+    {
+        _application.SetSetting("Weather:Location:Latitude", "east");
+
+        var response = await _application.GetAsync("/weather/rain");
+
+        Assert.Equal(StatusCodes.Status500InternalServerError, response.StatusCode);
+        Assert.StartsWith("text/plain", response.ContentType, StringComparison.Ordinal);
+        Assert.Equal("Weather:Location:Latitude \"east\" is not a number.", await ReadBody(response));
+    }
+
     private static async Task<string> ReadBody(HttpResponse response)
     {
         using var reader = new StreamReader(response.Body);
