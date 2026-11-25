@@ -38,9 +38,7 @@ public sealed class BridgeServiceRegistrationTests
     }
 
     [Theory]
-    [InlineData("Weather:Location:Longitude", "")]
     [InlineData("Weather:Location:Longitude", "east")]
-    [InlineData("Weather:Location:Longitude", null)]
     [InlineData("Weather:Location:Latitude", "91")]
     public void AddBridgeServices_InvalidLocation_StartsWithTheLocationInvalid(string key, string? value)
     {

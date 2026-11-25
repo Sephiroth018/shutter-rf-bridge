@@ -38,9 +38,9 @@ public sealed class RainReportLogTests
     }
 
     [Fact]
-    public void RecordInvalidLocation_AnyProblem_LogsAWarningWithIt()
+    public void RecordInvalidLocation_AnyProblem_LogsItAtTheGivenLevel()
     {
-        _log.RecordInvalidLocation("Weather:Location missing");
+        _log.RecordInvalidLocation(LogLevel.Warning, "Weather:Location missing");
 
         Assert.Equal([(LogLevel.Warning, "No rain data, invalid location: Weather:Location missing")],
             LoggedEntries());

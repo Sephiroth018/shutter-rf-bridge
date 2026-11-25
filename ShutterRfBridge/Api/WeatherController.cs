@@ -42,7 +42,8 @@ public class WeatherController : ControllerBase
 
     private ContentResult ReportInvalidLocation(string problem)
     {
-        _log.RecordInvalidLocation(problem);
+        // Every request, unlike the one error at startup: the problem needs fixing.
+        _log.RecordInvalidLocation(LogLevel.Warning, problem);
         var answer = Content(problem);
         answer.StatusCode = StatusCodes.Status500InternalServerError;
         return answer;

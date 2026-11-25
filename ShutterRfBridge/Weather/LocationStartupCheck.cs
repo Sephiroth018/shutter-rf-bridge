@@ -16,7 +16,7 @@ internal sealed class LocationStartupCheck : IHostedService
     {
         if (_location is InvalidLocation invalid)
         {
-            _log.RecordInvalidLocationAtStartup(invalid.Problem);
+            _log.RecordInvalidLocation(LogLevel.Error, invalid.Problem);
         }
 
         return Task.CompletedTask;

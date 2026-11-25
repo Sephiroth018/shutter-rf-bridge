@@ -39,7 +39,7 @@ public abstract record Location
         if (!double.IsFinite(degrees) || Math.Abs(degrees) > max)
         {
             problems.Add(string.Create(CultureInfo.InvariantCulture,
-                $"{SettingKey}:{coordinateName} {degrees} out of range"));
+                $"{ConfigurationPath.Combine(SettingKey, coordinateName)} {degrees} out of range"));
         }
     }
 }

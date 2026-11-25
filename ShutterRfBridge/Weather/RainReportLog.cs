@@ -2,7 +2,7 @@ namespace ShutterRfBridge.Weather;
 
 /// <summary>
 ///     The rain's log entries: each amount at debug level, since the CCU3 asks every 15 minutes, and missing rain data
-///     as a warning every time; an invalid location also as an error at startup.
+///     as a warning every time; an invalid location at the level its caller gives.
 /// </summary>
 public partial class RainReportLog
 {
@@ -19,9 +19,6 @@ public partial class RainReportLog
     [LoggerMessage(Level = LogLevel.Warning, Message = "No rain data: {Reason}")]
     public partial void RecordUnknown(string reason);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "No rain data, invalid location: {Problem}")]
-    public partial void RecordInvalidLocationAtStartup(string problem);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "No rain data, invalid location: {Problem}")]
-    public partial void RecordInvalidLocation(string problem);
+    [LoggerMessage(Message = "No rain data, invalid location: {Problem}")]
+    public partial void RecordInvalidLocation(LogLevel level, string problem);
 }
