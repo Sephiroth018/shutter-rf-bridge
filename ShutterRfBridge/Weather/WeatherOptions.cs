@@ -5,6 +5,6 @@ internal class WeatherOptions
 {
     public const string SectionName = "Weather";
 
-    /// <summary>The house's location, checked by <see cref="HouseLocation.Read" />.</summary>
+    /// <summary>The house's location, checked by <see cref="ShutterRfBridge.Weather.Location.Read" />.</summary>
     public LocationSettings? Location { get; init; }
 }

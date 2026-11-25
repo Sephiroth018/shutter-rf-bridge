@@ -48,10 +48,10 @@ public sealed class BridgeServiceRegistrationTests
         _settings[key] = value;
 
         var exception = Record.Exception(ValidateStartup);
-        var location = ResolveHouseLocation();
+        var location = ResolveLocation();
 
         Assert.Null(exception);
-        Assert.IsType<UnusableHouseLocation>(location);
+        Assert.IsType<InvalidLocation>(location);
     }
 
     [Fact]
@@ -60,10 +60,10 @@ public sealed class BridgeServiceRegistrationTests
         _settings["Weather:Location"] = string.Empty;
 
         var exception = Record.Exception(ValidateStartup);
-        var location = ResolveHouseLocation();
+        var location = ResolveLocation();
 
         Assert.Null(exception);
-        Assert.Equal(new UnusableHouseLocation("Weather:Location is missing."), location);
+        Assert.Equal(new InvalidLocation("Weather:Location is missing."), location);
     }
 
     [Fact]
@@ -71,9 +71,9 @@ public sealed class BridgeServiceRegistrationTests
     {
         _settings["Weather:Location:Latitude"] = "47.5";
 
-        var location = ResolveHouseLocation();
+        var location = ResolveLocation();
 
-        Assert.Equal(new UnusableHouseLocation("Weather:Location:Longitude is missing or empty."), location);
+        Assert.Equal(new InvalidLocation("Weather:Location:Longitude is missing or empty."), location);
     }
 
     private void ValidateStartup()
@@ -83,11 +83,11 @@ public sealed class BridgeServiceRegistrationTests
         provider.GetRequiredService<IStartupValidator>().Validate();
     }
 
-    private HouseLocation ResolveHouseLocation()
+    private Location ResolveLocation()
     {
         using var provider = BuildServiceProvider();
 
-        return provider.GetRequiredService<HouseLocation>();
+        return provider.GetRequiredService<Location>();
     }
 
     private ServiceProvider BuildServiceProvider()

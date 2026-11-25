@@ -13,11 +13,11 @@ namespace ShutterRfBridge.Api;
 [Route("weather")]
 public class WeatherController : ControllerBase
 {
-    private readonly HouseLocation _location;
+    private readonly Location _location;
     private readonly RainReportLog _log;
     private readonly RainReporter _reporter;
 
-    public WeatherController(HouseLocation location, RainReporter reporter, RainReportLog log)
+    public WeatherController(Location location, RainReporter reporter, RainReportLog log)
     {
         _location = location;
         _reporter = reporter;
@@ -28,8 +28,8 @@ public class WeatherController : ControllerBase
     public async Task<ContentResult> Rain(CancellationToken cancellationToken) =>
         _location switch
         {
-            UsableHouseLocation usable => await ReportRainAsync(usable.Coordinates, cancellationToken),
-            UnusableHouseLocation unusable => ReportUnusableLocation(unusable.Problem),
+            ValidLocation usable => await ReportRainAsync(usable.Coordinates, cancellationToken),
+            InvalidLocation unusable => ReportUnusableLocation(unusable.Problem),
             _ => throw new UnreachableException()
         };
 

@@ -2,22 +2,22 @@ using ShutterRfBridge.Weather;
 
 namespace ShutterRfBridge.Tests.Weather;
 
-public sealed class HouseLocationTests
+public sealed class LocationTests
 {
     [Fact]
     public void Read_BothCoordinates_ReturnsThem()
     {
         var location = Read("47.5", "-13.25");
 
-        Assert.Equal(new UsableHouseLocation(new Coordinates(47.5, -13.25)), location);
+        Assert.Equal(new ValidLocation(new Coordinates(47.5, -13.25)), location);
     }
 
     [Fact]
     public void Read_NoLocation_ReturnsItAsMissing()
     {
-        var location = HouseLocation.Read(new WeatherOptions());
+        var location = Location.Read(new WeatherOptions());
 
-        Assert.Equal(new UnusableHouseLocation("Weather:Location is missing."), location);
+        Assert.Equal(new InvalidLocation("Weather:Location is missing."), location);
     }
 
     [Theory]
@@ -35,11 +35,11 @@ public sealed class HouseLocationTests
     {
         var location = Read(latitude, longitude);
 
-        Assert.Equal(new UnusableHouseLocation(problem), location);
+        Assert.Equal(new InvalidLocation(problem), location);
     }
 
-    private static HouseLocation Read(string? latitude, string? longitude) =>
-        HouseLocation.Read(new WeatherOptions
+    private static Location Read(string? latitude, string? longitude) =>
+        Location.Read(new WeatherOptions
         {
             Location = new LocationSettings { Latitude = latitude, Longitude = longitude }
         });

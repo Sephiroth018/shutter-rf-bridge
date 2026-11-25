@@ -20,8 +20,8 @@ internal static class BridgeServiceRegistration
         // Not validated on start: the shutters work without the rain, so an unusable location is only logged.
         services.AddOptions<WeatherOptions>().BindConfiguration(WeatherOptions.SectionName);
         services.AddSingleton(provider =>
-            HouseLocation.Read(provider.GetRequiredService<IOptions<WeatherOptions>>().Value));
-        services.AddHostedService<HouseLocationStartupCheck>();
+            Location.Read(provider.GetRequiredService<IOptions<WeatherOptions>>().Value));
+        services.AddHostedService<LocationStartupCheck>();
         services.AddHttpClient<NowcastClient>(client => client.Timeout = NowcastClient.RequestTimeout)
             // Its default logging writes every request at info level, which would reach the SD card every 15 minutes.
             .RemoveAllLoggers();

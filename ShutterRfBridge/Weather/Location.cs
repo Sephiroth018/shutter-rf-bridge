@@ -6,15 +6,15 @@ namespace ShutterRfBridge.Weather;
 ///     The house's location from the settings: its coordinates, or why they can't be used. Read once, so that a missing or
 ///     broken location never stops the shutters.
 /// </summary>
-public abstract record HouseLocation
+public abstract record Location
 {
     private const string LocationKey = $"{WeatherOptions.SectionName}:{nameof(WeatherOptions.Location)}";
 
-    internal static HouseLocation Read(WeatherOptions options)
+    internal static Location Read(WeatherOptions options)
     {
         if (options.Location is not { } settings)
         {
-            return new UnusableHouseLocation($"{LocationKey} is missing.");
+            return new InvalidLocation($"{LocationKey} is missing.");
         }
 
         List<string> problems = [];
@@ -23,8 +23,8 @@ public abstract record HouseLocation
         var longitude = ReadCoordinate(problems, nameof(Coordinates.Longitude), settings.Longitude,
             Coordinates.MaxLongitude);
         return latitude is { } validLatitude && longitude is { } validLongitude
-            ? new UsableHouseLocation(new Coordinates(validLatitude, validLongitude))
-            : new UnusableHouseLocation(string.Join(" ", problems));
+            ? new ValidLocation(new Coordinates(validLatitude, validLongitude))
+            : new InvalidLocation(string.Join(" ", problems));
     }
 
     /// <summary>The coordinate's degrees, or <see langword="null" /> after adding its problem to <paramref name="problems" />.</summary>
