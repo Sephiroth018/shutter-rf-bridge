@@ -320,7 +320,7 @@ Its made-up location is in Austria, so the rain endpoint fetches real nowcast da
 
 The service logs with [NLog](https://nlog-project.org/):
 
-- **Debug:** each rain answer, with its reason when it's unknown.
+- **Debug:** each rain amount answered.
 - **Information:** each command received, each timed Stop queued and each command sent.
 - **Warning:** refused and rejected requests, and each rain request without rain data, with the
   reason. During a GeoSphere outage that's one entry every 15 minutes.
