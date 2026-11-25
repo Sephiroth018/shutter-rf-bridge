@@ -6,12 +6,13 @@ namespace ShutterRfBridge.Tests.Weather;
 
 public sealed class HouseLocationStartupCheckTests
 {
-    private readonly FakeLogger<HouseLocationStartupCheck> _logger = new();
+    private readonly FakeLogger<RainReportLog> _logger = new();
 
     [Fact]
     public async Task StartAsync_UnusableLocation_LogsAnErrorWithTheProblem()
     {
-        var check = new HouseLocationStartupCheck(new UnusableHouseLocation("Weather:Location is missing."), _logger);
+        var check = new HouseLocationStartupCheck(new UnusableHouseLocation("Weather:Location is missing."),
+            new RainReportLog(_logger));
 
         await check.StartAsync(TestContext.Current.CancellationToken);
 
@@ -24,7 +25,8 @@ public sealed class HouseLocationStartupCheckTests
     [Fact]
     public async Task StartAsync_UsableLocation_LogsNothing()
     {
-        var check = new HouseLocationStartupCheck(new UsableHouseLocation(new Coordinates(47.5, 13.25)), _logger);
+        var check = new HouseLocationStartupCheck(new UsableHouseLocation(new Coordinates(47.5, 13.25)),
+            new RainReportLog(_logger));
 
         await check.StartAsync(TestContext.Current.CancellationToken);
 
