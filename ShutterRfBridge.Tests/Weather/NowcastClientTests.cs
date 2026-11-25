@@ -38,7 +38,7 @@ public sealed class NowcastClientTests : IDisposable
         await GetStepsAsync();
 
         Assert.Equal(
-            "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km?parameters=rr&lat_lon=47.5,13.25&start=2026-11-23T18:30:00.0000000Z&end=2026-11-23T19:00:00.0000000Z",
+            "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km?parameters=rr&lat_lon=47.5,13.25&start=2026-11-23T18%3A30%3A00.0000000Z&end=2026-11-23T19%3A00%3A00.0000000Z",
             requested?.AbsoluteUri);
     }
 
@@ -52,7 +52,7 @@ public sealed class NowcastClientTests : IDisposable
         await _client.GetStepsAsync(Location, StepTime.ToOffset(TimeSpan.FromHours(1)), StepCount,
             TestContext.Current.CancellationToken);
 
-        Assert.EndsWith("&start=2026-11-23T18:30:00.0000000Z&end=2026-11-23T19:00:00.0000000Z",
+        Assert.EndsWith("&start=2026-11-23T18%3A30%3A00.0000000Z&end=2026-11-23T19%3A00%3A00.0000000Z",
             requested?.AbsoluteUri,
             StringComparison.Ordinal);
     }

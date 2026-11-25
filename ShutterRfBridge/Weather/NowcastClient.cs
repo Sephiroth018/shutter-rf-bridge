@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace ShutterRfBridge.Weather;
 
@@ -44,8 +45,13 @@ public class NowcastClient
     {
         var stepTimes = Enumerable.Range(0, stepCount).Select(step => firstStepTime + step * Nowcast.StepLength)
             .ToList();
-        var url = string.Create(CultureInfo.InvariantCulture,
-            $"{DatasetAddress}?parameters=rr&lat_lon={location.Latitude},{location.Longitude}&start={Format(stepTimes[0])}&end={Format(stepTimes[^1])}");
+        var url = QueryHelpers.AddQueryString(DatasetAddress, new Dictionary<string, string?>
+        {
+            ["parameters"] = "rr",
+            ["lat_lon"] = string.Create(CultureInfo.InvariantCulture, $"{location.Latitude},{location.Longitude}"),
+            ["start"] = Format(stepTimes[0]),
+            ["end"] = Format(stepTimes[^1])
+        });
         var response = await _httpClient.GetFromJsonAsync<NowcastResponse>(url, JsonOptions, cancellationToken)
                        ?? throw new JsonException("The nowcast response is null.");
         return response.ToNowcast(stepTimes);
