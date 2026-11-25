@@ -3,52 +3,43 @@ using System.Globalization;
 namespace ShutterRfBridge.Weather;
 
 /// <summary>
-///     The house's location from the settings: its coordinates, or why they can't be used. Read once, so that a missing or
-///     broken location never stops the shutters.
+///     The location for the rain, from the <see cref="SettingKey" /> setting: its coordinates, or why they can't be used.
+///     Read once, so that a missing or broken setting never stops the shutters.
 /// </summary>
 public abstract record Location
 {
-    private const string LocationKey = $"{WeatherOptions.SectionName}:{nameof(WeatherOptions.Location)}";
+    public const string SettingKey = "Weather:Location";
 
-    internal static Location Read(WeatherOptions options)
+    internal static Location Read(IConfiguration configuration)
     {
-        if (options.Location is not { } settings)
+        Coordinates? coordinates;
+        try
         {
-            return new InvalidLocation($"{LocationKey} is missing.");
+            coordinates = configuration.GetSection(SettingKey).Get<Coordinates>();
+        }
+        // The binder fails on a missing, empty or non-numeric coordinate, naming it.
+        catch (InvalidOperationException exception)
+        {
+            return new InvalidLocation(exception.Message);
+        }
+
+        if (coordinates is null)
+        {
+            return new InvalidLocation($"{SettingKey} missing");
         }
 
         List<string> problems = [];
-        var latitude = ReadCoordinate(problems, nameof(Coordinates.Latitude), settings.Latitude,
-            Coordinates.MaxLatitude);
-        var longitude = ReadCoordinate(problems, nameof(Coordinates.Longitude), settings.Longitude,
-            Coordinates.MaxLongitude);
-        return latitude is { } validLatitude && longitude is { } validLongitude
-            ? new ValidLocation(new Coordinates(validLatitude, validLongitude))
-            : new InvalidLocation(string.Join(" ", problems));
+        AddRangeProblem(problems, nameof(Coordinates.Latitude), coordinates.Latitude, Coordinates.MaxLatitude);
+        AddRangeProblem(problems, nameof(Coordinates.Longitude), coordinates.Longitude, Coordinates.MaxLongitude);
+        return problems.Count == 0 ? new ValidLocation(coordinates) : new InvalidLocation(string.Join(", ", problems));
     }
 
-    /// <summary>The coordinate's degrees, or <see langword="null" /> after adding its problem to <paramref name="problems" />.</summary>
-    private static double? ReadCoordinate(List<string> problems, string coordinateName, string? text, double max)
+    private static void AddRangeProblem(List<string> problems, string coordinateName, double degrees, double max)
     {
-        var key = $"{LocationKey}:{coordinateName}";
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            problems.Add($"{key} is missing or empty.");
-            return null;
-        }
-
-        if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var degrees))
-        {
-            problems.Add($"{key} \"{text}\" is not a number.");
-            return null;
-        }
-
         if (!double.IsFinite(degrees) || Math.Abs(degrees) > max)
         {
-            problems.Add(string.Create(CultureInfo.InvariantCulture, $"{key} {degrees} is outside -{max} to {max}."));
-            return null;
+            problems.Add(string.Create(CultureInfo.InvariantCulture,
+                $"{SettingKey}:{coordinateName} {degrees} out of range"));
         }
-
-        return degrees;
     }
 }

@@ -72,13 +72,13 @@ public sealed class WeatherControllerTests : IAsyncDisposable
     [Fact]
     public async Task Rain_UnusableLocation_ReturnsAnErrorWithTheProblemAsPlainText()
     {
-        _application.SetSetting("Weather:Location:Latitude", "east");
+        _application.SetSetting("Weather:Location:Latitude", "91");
 
         var response = await _application.GetAsync("/weather/rain");
 
         Assert.Equal(StatusCodes.Status500InternalServerError, response.StatusCode);
         Assert.StartsWith("text/plain", response.ContentType, StringComparison.Ordinal);
-        Assert.Equal("Weather:Location:Latitude \"east\" is not a number.", await ReadBody(response));
+        Assert.Equal("Weather:Location:Latitude 91 out of range", await ReadBody(response));
     }
 
     private static async Task<string> ReadBody(HttpResponse response)

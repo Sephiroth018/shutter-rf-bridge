@@ -42,7 +42,7 @@ public sealed class BridgeServiceRegistrationTests
     [InlineData("Weather:Location:Longitude", "east")]
     [InlineData("Weather:Location:Longitude", null)]
     [InlineData("Weather:Location:Latitude", "91")]
-    public void AddBridgeServices_UnusableLocation_StartsWithTheLocationUnusable(string key, string? value)
+    public void AddBridgeServices_InvalidLocation_StartsWithTheLocationInvalid(string key, string? value)
     {
         _settings["Weather:Location:Latitude"] = "47.5";
         _settings[key] = value;
@@ -63,17 +63,7 @@ public sealed class BridgeServiceRegistrationTests
         var location = ResolveLocation();
 
         Assert.Null(exception);
-        Assert.Equal(new InvalidLocation("Weather:Location is missing."), location);
-    }
-
-    [Fact]
-    public void AddBridgeServices_UnusableLocation_ProvidesItsProblem()
-    {
-        _settings["Weather:Location:Latitude"] = "47.5";
-
-        var location = ResolveLocation();
-
-        Assert.Equal(new InvalidLocation("Weather:Location:Longitude is missing or empty."), location);
+        Assert.Equal(new InvalidLocation("Weather:Location missing"), location);
     }
 
     private void ValidateStartup()

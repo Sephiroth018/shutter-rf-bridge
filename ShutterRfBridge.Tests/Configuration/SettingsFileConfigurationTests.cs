@@ -89,8 +89,7 @@ public sealed class SettingsFileConfigurationTests : IDisposable
 
         configuration.AddSettingsFile(deployDirectory);
 
-        Assert.False(configuration.GetSection($"{WeatherOptions.SectionName}:{nameof(WeatherOptions.Location)}")
-            .Exists());
+        Assert.False(configuration.GetSection(Location.SettingKey).Exists());
     }
 
     /// <summary>The configuration sources the service's own builder has, with the built-in files from the test's folder.</summary>
