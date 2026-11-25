@@ -89,7 +89,7 @@ public sealed class RainReporterTests : IDisposable
         var millimetres = await ReportAsync();
 
         Assert.Null(millimetres);
-        Assert.Equal("The rain is now unknown: the nowcast has no value for 2026-11-23 18:30:00Z",
+        Assert.Equal("No rain data: no value for 2026-11-23 18:30:00Z",
             _logger.LatestRecord.Message);
     }
 
@@ -116,7 +116,7 @@ public sealed class RainReporterTests : IDisposable
 
         Assert.Null(millimetres);
         Assert.Equal(
-            "The rain is now unknown: the latest nowcast run, from 2026-11-23 18:15:00Z, is older than 01:00:00",
+            "No rain data: stale run from 2026-11-23 18:15:00Z",
             _logger.LatestRecord.Message);
     }
 
@@ -128,7 +128,7 @@ public sealed class RainReporterTests : IDisposable
         var millimetres = await ReportAsync();
 
         Assert.Null(millimetres);
-        Assert.Equal("The rain is now unknown: the nowcast has no value for 2026-11-23 18:30:00Z",
+        Assert.Equal("No rain data: no value for 2026-11-23 18:30:00Z",
             _logger.LatestRecord.Message);
     }
 

@@ -1,6 +1,6 @@
 namespace ShutterRfBridge.Weather;
 
-/// <summary>Logs an error at startup when the <see cref="Location" /> is unusable; the shutters work anyway.</summary>
+/// <summary>Logs an error at startup when the <see cref="Location" /> is invalid; the shutters work anyway.</summary>
 internal sealed class LocationStartupCheck : IHostedService
 {
     private readonly Location _location;
@@ -14,9 +14,9 @@ internal sealed class LocationStartupCheck : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (_location is InvalidLocation unusable)
+        if (_location is InvalidLocation invalid)
         {
-            _log.RecordUnusableLocationAtStartup(unusable.Problem);
+            _log.RecordInvalidLocationAtStartup(invalid.Problem);
         }
 
         return Task.CompletedTask;

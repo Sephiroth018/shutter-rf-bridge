@@ -70,7 +70,7 @@ public sealed class WeatherControllerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task Rain_UnusableLocation_ReturnsAnErrorWithTheProblemAsPlainText()
+    public async Task Rain_InvalidLocation_ReturnsAnErrorWithTheProblemAsPlainText()
     {
         _application.SetSetting("Weather:Location:Latitude", "91");
 

@@ -7,7 +7,7 @@ namespace ShutterRfBridge.Api;
 
 /// <summary>
 ///     The endpoint the CCU3 polls for the rain, answering plain text: <c>200 OK</c> with the millimetres or
-///     <c>unknown</c>, or <c>500</c> with the problem while the house's location is unusable.
+///     <c>unknown</c>, or <c>500</c> with the problem while the location is invalid.
 /// </summary>
 [ApiController]
 [Route("weather")]
@@ -28,8 +28,8 @@ public class WeatherController : ControllerBase
     public async Task<ContentResult> Rain(CancellationToken cancellationToken) =>
         _location switch
         {
-            ValidLocation usable => await ReportRainAsync(usable.Coordinates, cancellationToken),
-            InvalidLocation unusable => ReportUnusableLocation(unusable.Problem),
+            ValidLocation valid => await ReportRainAsync(valid.Coordinates, cancellationToken),
+            InvalidLocation invalid => ReportInvalidLocation(invalid.Problem),
             _ => throw new UnreachableException()
         };
 
@@ -40,9 +40,9 @@ public class WeatherController : ControllerBase
         return Content(millimetres?.ToString(CultureInfo.InvariantCulture) ?? "unknown");
     }
 
-    private ContentResult ReportUnusableLocation(string problem)
+    private ContentResult ReportInvalidLocation(string problem)
     {
-        _log.RecordUnusableLocation(problem);
+        _log.RecordInvalidLocation(problem);
         var answer = Content(problem);
         answer.StatusCode = StatusCodes.Status500InternalServerError;
         return answer;

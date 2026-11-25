@@ -38,26 +38,25 @@ public class RainReporter
         }
         catch (HttpRequestException exception)
         {
-            return ReportUnknown($"the nowcast request failed: {exception.Message}");
+            return ReportUnknown($"request failed: {exception.Message}");
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return ReportUnknown($"the nowcast request took longer than {NowcastClient.RequestTimeout}");
+            return ReportUnknown($"timed out after {NowcastClient.RequestTimeout.TotalSeconds} s");
         }
         catch (JsonException exception)
         {
-            return ReportUnknown($"the nowcast response is unreadable: {exception.Message}");
+            return ReportUnknown($"unreadable response: {exception.Message}");
         }
 
         if (now - nowcast.ReferenceTime > StalenessLimit)
         {
-            return ReportUnknown(
-                $"the latest nowcast run, from {nowcast.ReferenceTime:u}, is older than {StalenessLimit}");
+            return ReportUnknown($"stale run from {nowcast.ReferenceTime:u}");
         }
 
         if (nowcast.Millimetres is not [not null, ..])
         {
-            return ReportUnknown($"the nowcast has no value for {stepTime:u}");
+            return ReportUnknown($"no value for {stepTime:u}");
         }
 
         // Later steps without a value are left out.
