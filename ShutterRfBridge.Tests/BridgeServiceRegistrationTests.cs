@@ -38,18 +38,32 @@ public sealed class BridgeServiceRegistrationTests
     }
 
     [Theory]
-    [InlineData("47.5", "")]
-    [InlineData("47.5", "east")]
-    [InlineData("47.5", null)]
-    [InlineData("91", "13.25")]
-    public void AddBridgeServices_UnusableLocation_PassesTheStartupValidation(string latitude, string? longitude)
+    [InlineData("Weather:Location:Longitude", "")]
+    [InlineData("Weather:Location:Longitude", "east")]
+    [InlineData("Weather:Location:Longitude", null)]
+    [InlineData("Weather:Location:Latitude", "91")]
+    public void AddBridgeServices_UnusableLocation_StartsWithTheLocationUnusable(string key, string? value)
     {
-        _settings["Weather:Location:Latitude"] = latitude;
-        _settings["Weather:Location:Longitude"] = longitude;
+        _settings["Weather:Location:Latitude"] = "47.5";
+        _settings[key] = value;
 
         var exception = Record.Exception(ValidateStartup);
+        var location = ResolveHouseLocation();
 
         Assert.Null(exception);
+        Assert.IsType<UnusableHouseLocation>(location);
+    }
+
+    [Fact]
+    public void AddBridgeServices_LocationWrittenAsAValue_StartsWithTheLocationMissing()
+    {
+        _settings["Weather:Location"] = string.Empty;
+
+        var exception = Record.Exception(ValidateStartup);
+        var location = ResolveHouseLocation();
+
+        Assert.Null(exception);
+        Assert.Equal(new UnusableHouseLocation("Weather:Location is missing."), location);
     }
 
     [Fact]
