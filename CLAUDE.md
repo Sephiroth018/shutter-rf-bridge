@@ -12,8 +12,8 @@ loaded.
 # Project
 
 A .NET service on a Raspberry Pi 4 that sends 433 MHz remote control codes to radio-controlled
-shutters through a CC1101 transceiver, controlled over HTTP by a Homematic CCU3 (see README.md).
-It also reports the rain from GeoSphere Austria's nowcast, which the CCU3 polls to close the
+shutters through a CC1101 transceiver, controlled over HTTP by an OpenCCU instance, "the CCU" (see README.md).
+It also reports the rain from GeoSphere Austria's nowcast, which the CCU polls to close the
 shutters.
 The repository is a public GitHub repository, `Sephiroth018/shutter-rf-bridge`.
 
@@ -30,7 +30,7 @@ The repository is a public GitHub repository, `Sephiroth018/shutter-rf-bridge`.
 
 ## Verification
 
-The Definition of done's steps, which CI runs. Changes that reach the radio or the CCU3 are also
+The Definition of done's steps, which CI runs. Changes that reach the radio or the CCU are also
 tested by the user on the hardware, as the checklist in the PR's description.
 
 ## Versioning
