@@ -1,9 +1,12 @@
 using System.Net;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using ShutterRfBridge.Tests.TestSupport;
+using ShutterRfBridge.Weather;
 
 namespace ShutterRfBridge.Tests.Api;
 
@@ -93,6 +96,23 @@ public sealed class WeatherControllerTests : IAsyncDisposable
 
         Assert.Equal((StatusCodes.Status500InternalServerError, string.Empty),
             (response.StatusCode, await ReadBody(response)));
+    }
+
+    [Fact]
+    public async Task Rain_InvalidLocation_LogsTheProblemAtStartupAndWithTheRequest()
+    {
+        var logger = new FakeLogger<RainReportLog>();
+        _application.ReplaceService(new RainReportLog(logger));
+        _application.SetSetting("Weather:Location:Latitude", "91");
+
+        await _application.GetAsync("/weather/rain");
+
+        Assert.Equal(
+            [
+                (LogLevel.Error, "No rain data, invalid location: Weather:Location:Latitude 91 out of range"),
+                (LogLevel.Warning, "No rain data, invalid location: Weather:Location:Latitude 91 out of range")
+            ],
+            logger.Collector.GetSnapshot().Select(record => (record.Level, record.Message)));
     }
 
     private static async Task<string> ReadBody(HttpResponse response)

@@ -11,6 +11,7 @@ namespace ShutterRfBridge.Tests.Weather;
 public sealed class RainReporterTests : IDisposable
 {
     private static readonly DateTimeOffset StepTime = NowcastResponseBuilder.CurrentStepTime;
+    private static readonly Coordinates Coordinates = new(47.5, 13.25);
 
     private readonly SubstitutableHttpMessageHandler _handler = Substitute.For<SubstitutableHttpMessageHandler>();
     private readonly HttpClient _httpClient;
@@ -149,7 +150,51 @@ public sealed class RainReporterTests : IDisposable
         Assert.StartsWith("No rain data: request failed: ", _logger.LatestRecord.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task ReportAsync_RequestTimedOut_ReturnsUnknownAndLogsTheTimeout()
+    {
+        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException());
+
+        var millimetres = await ReportAsync();
+
+        Assert.Null(millimetres);
+        Assert.Equal("No rain data: timed out after 5 s", _logger.LatestRecord.Message);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.TooManyRequests, "", "No rain data: request failed: ")]
+    [InlineData(HttpStatusCode.OK, "{", "No rain data: unreadable response: ")]
+    public async Task ReportAsync_FailedResponse_ReturnsUnknownAndLogsTheReason(
+        HttpStatusCode status,
+        string body,
+        string logStart)
+    {
+        _handler.Respond(status, body);
+
+        var millimetres = await ReportAsync();
+
+        Assert.Null(millimetres);
+        Assert.StartsWith(logStart, _logger.LatestRecord.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ReportAsync_CancelledByTheCaller_ThrowsWithoutLogging()
+    {
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException());
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            CreateReporter().ReportAsync(Coordinates, cancellation.Token));
+
+        Assert.Equal(0, _logger.Collector.Count);
+    }
+
     private Task<double?> ReportAsync() =>
-        new RainReporter(new NowcastClient(_httpClient), _timeProvider, new RainReportLog(_logger))
-            .ReportAsync(new Coordinates(47.5, 13.25), TestContext.Current.CancellationToken);
+        CreateReporter().ReportAsync(Coordinates, TestContext.Current.CancellationToken);
+
+    private RainReporter CreateReporter() =>
+        new(new NowcastClient(_httpClient), _timeProvider, new RainReportLog(_logger));
 }
