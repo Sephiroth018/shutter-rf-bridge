@@ -54,14 +54,12 @@ public class RainReporter
             return ReportUnknown($"stale run from {nowcast.ReferenceTime:u}");
         }
 
-        // Steps without a value are left out.
-        var amounts = nowcast.Millimetres.OfType<double>().ToList();
-        if (amounts.Count == 0)
+        // Max leaves out steps without a value, and is null when none has one.
+        if (nowcast.Millimetres.Max() is not { } heaviest)
         {
             return ReportUnknown($"no values from {stepTime:u}");
         }
 
-        var heaviest = amounts.Max();
         _log.RecordAmount(heaviest);
         return heaviest;
     }

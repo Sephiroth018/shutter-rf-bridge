@@ -121,9 +121,13 @@ public sealed class RainReporterTests : IDisposable
     }
 
     [Fact]
-    public async Task ReportAsync_NoValueForTheStep_ReturnsUnknownAndLogsTheStep()
+    public async Task ReportAsync_NoStepWithValue_ReturnsUnknownAndLogsTheFirstStep()
     {
-        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithStep(StepTime, null).Build());
+        _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
+            .WithStep(StepTime, null)
+            .WithStep(StepTime.AddMinutes(15), null)
+            .WithStep(StepTime.AddMinutes(30), null)
+            .Build());
 
         var millimetres = await ReportAsync();
 
