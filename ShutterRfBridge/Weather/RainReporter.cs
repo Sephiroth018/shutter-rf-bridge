@@ -36,7 +36,8 @@ public class RainReporter
         {
             nowcast = await _client.GetStepsAsync(location, stepTime, StepCount, cancellationToken);
         }
-        catch (HttpRequestException exception)
+        // An IOException (HttpIOException) comes from a response that breaks off while its body is read.
+        catch (Exception exception) when (exception is HttpRequestException or IOException)
         {
             return ReportUnknown($"request failed: {exception.Message}");
         }

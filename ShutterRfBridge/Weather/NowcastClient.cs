@@ -35,6 +35,7 @@ public class NowcastClient
     ///     <paramref name="firstStepTime" /> on, as far as it covers them.
     /// </summary>
     /// <exception cref="HttpRequestException">The request failed or didn't succeed.</exception>
+    /// <exception cref="IOException">The response broke off while its body was read.</exception>
     /// <exception cref="TaskCanceledException">The request timed out or was cancelled.</exception>
     /// <exception cref="JsonException">The response isn't a nowcast for one point and those steps.</exception>
     public async Task<Nowcast> GetStepsAsync(

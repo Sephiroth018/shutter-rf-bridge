@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using ShutterRfBridge.Tests.TestSupport;
 using ShutterRfBridge.Weather;
 
@@ -134,6 +135,18 @@ public sealed class RainReporterTests : IDisposable
         Assert.Null(millimetres);
         Assert.Equal("No rain data: no values from 2026-11-23 18:30:00Z",
             _logger.LatestRecord.Message);
+    }
+
+    [Fact]
+    public async Task ReportAsync_ResponseBrokeOff_ReturnsUnknownAndLogsTheFailure()
+    {
+        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpIOException(HttpRequestError.ResponseEnded));
+
+        var millimetres = await ReportAsync();
+
+        Assert.Null(millimetres);
+        Assert.StartsWith("No rain data: request failed: ", _logger.LatestRecord.Message, StringComparison.Ordinal);
     }
 
     private Task<double?> ReportAsync() =>
