@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <!-- Coverage of the production project, enforced on every test run; the threshold only goes up. -->
-    <TestingPlatformCommandLineArguments>--coverlet --coverlet-include "[ShutterRfBridge]*" --coverlet-threshold 95</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments>--coverlet --coverlet-include "[ShutterRfBridge]*" --coverlet-threshold 96</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup>

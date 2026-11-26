@@ -2,7 +2,8 @@
 
 Controls radio-controlled external blinds and roller shutters from a Homematic CCU3. A service on
 a Raspberry Pi 4 sends the shutters' 433 MHz remote control codes through a CC1101 transceiver
-and offers them as an HTTP API, which CUxD devices on the CCU3 call.
+and offers them as an HTTP API, which CUxD devices on the CCU3 call. As a bonus, it tells the CCU3
+how much rain falls at the configured coordinates, from GeoSphere Austria's rain nowcast.
 
 ## Requirements
 
@@ -41,16 +42,15 @@ the script again, which builds and starts the service:
 
 ### Settings
 
-The house values live in `/etc/shutter-rf-bridge/appsettings.json`, which overrides the service's
+The local settings live in `/etc/shutter-rf-bridge/appsettings.json`, which overrides the service's
 built-in settings:
 
 ```bash
 sudo nano /etc/shutter-rf-bridge/appsettings.json
 ```
 
-Fill in `RemoteId` and the CCU's IP address as the first entry of `AllowedClients`; the comments in
-the file explain each value, and [Configuration](#configuration) has the details. Once the service
-is installed, restart it after every change:
+Fill in the values as described in [Configuration](#configuration). Once the service is
+installed, restart it after every change:
 
 ```bash
 sudo systemctl restart shutter-rf-bridge
@@ -62,6 +62,32 @@ To update, run the deploy script again, while no shutter is moving: a restart dr
 Stops, so a shutter in a partial move would run to its end. Without new commits, it leaves the
 running service alone. After system updates, restart the
 service so it runs on the patched .NET.
+
+The deploy script never changes the settings file, so settings added in a newer version have to be
+added by hand. For the rain, if the settings file has no `"Weather"` line yet, open it:
+
+```bash
+sudo nano /etc/shutter-rf-bridge/appsettings.json
+```
+
+Paste this block on its own line right after the `},` that closes the `"Bridge"` block, fill in
+the coordinates as described in [Configuration](#configuration), save with Ctrl+O and Enter, and
+exit with Ctrl+X:
+
+```json
+  "Weather": {
+    "Location": {
+      "Latitude": "",
+      "Longitude": ""
+    }
+  },
+```
+
+Then restart the service:
+
+```bash
+sudo systemctl restart shutter-rf-bridge
+```
 
 ### Logs
 
@@ -95,7 +121,7 @@ its system user, and is safe to run again:
 ```
 
 The settings are kept, so running the deploy script again reinstalls the service as it was. To
-remove them as well, note the house values first, if you still need them:
+remove them as well, note the local settings first, if you still need them:
 
 ```bash
 sudo cat /etc/shutter-rf-bridge/appsettings.json
@@ -151,6 +177,57 @@ In each shutter's channel settings:
 
 The channel's other fields aren't needed.
 
+### Rain
+
+The rain comes in through a string system variable that a CUxD timer fills every 15 minutes, with
+no HM script doing the fetch: a script that waits for a command's output stops every other script on
+the CCU3 meanwhile. A program then turns the text into a number and a dry/rain state.
+
+1. Create three system variables:
+
+   | Name | Type | Values |
+   |---|---|---|
+   | `Regen_Pi` | Zeichenkette | The service's answer, e.g. `0.3` or `unknown` |
+   | `Regen_mm` | Zahl, unit `mm` | The rain in the heaviest 15 minutes of the next 45 |
+   | `Regen` | Werteliste | `trocken;Regen;unbekannt` |
+
+2. Create one CUxD **(28) System** device with the function **Timer** and accept it from the
+   WebUI's inbox. In its first channel's settings:
+
+   | Field | Value |
+   |---|---|
+   | `TIMER_PRESET` | `:0:0/:15:0/:30:0/:45:0` |
+   | `REPEAT` | ticked |
+   | `CMD_EXEC` | `extra/timer.tcl Regen_Pi ~22$(curl -sf -m 20 http://<pi>:5080/weather/rain \|\| echo unknown)~22` |
+   | `EXEC_TIMEOUT` | `1` |
+
+   `~22` is CUxD's spelling of `"` in these fields. `timer.tcl` writes the answer into `Regen_Pi`;
+   if the Pi doesn't answer, `curl` fails and `unknown` is written instead. If the timer doesn't
+   start by itself, start it once from a script:
+   `dom.GetObject("CUxD.CUX2800001:1.TIMER_SET").State(":0:0/:15:0/:30:0/:45:0");`
+
+3. Create a program with the condition **Systemzustand `Regen_Pi`, bei Änderung auslösen**, with
+   the text field left empty. It only triggers the program, since the WebUI's text comparison
+   doesn't pick the branch reliably. So **Dann** and **Sonst** both get the same script, which
+   sets the amount, and the state by a threshold of your choice:
+
+   ```
+   var raw = dom.GetObject("Regen_Pi").Value();
+   if (raw == "unknown") {
+     dom.GetObject("Regen").State(2);
+   } else {
+     var mm = raw.ToFloat();
+     dom.GetObject("Regen_mm").State(mm);
+     if (mm >= 0.1) { dom.GetObject("Regen").State(1); } else { dom.GetObject("Regen").State(0); }
+   }
+   ```
+
+   To test it, run `dom.GetObject("Regen_Pi").State("unknown");` in Skript testen, then the same
+   with `"0.5"` and `"0"`: `Regen` switches to unbekannt, Regen and trocken.
+
+Other programs react to `Regen` with bei Änderung auslösen, so they run only when the state
+changes, or compare `Regen_mm` with their own threshold, checking first that `Regen` isn't unknown.
+
 ### Known limitations
 
 - **The radio is one-way.** After the physical remote has been used, the CCU's position estimate is
@@ -159,11 +236,20 @@ The channel's other fields aren't needed.
   physical remote. Use the remote instead.
 - **Run times are at most 65 seconds** (see step 3 above).
 - **A restart of the service drops pending timed Stops** (see [Update](#update)).
+- **The rain is radar-based:** it misses light drizzle and very local showers, and lags by about
+  30 minutes. Reporting the next 45 minutes makes up for the lag, but means shutters also close
+  for a shower that passes by. That's enough for "keep closed while it rains", not for protecting
+  anything from a sudden shower.
 
 ## HTTP API
 
-Every endpoint is a `POST` without a body, with the shutter's channel on the remote (0–15) in the
-path:
+Every request from a client that isn't in `Bridge:AllowedClients` (see
+[Configuration](#configuration)) is answered with `403 Forbidden`, whatever the path.
+
+### Shutters
+
+Every shutter endpoint is a `POST` without a body, with the shutter's channel on the remote (0–15)
+in the path:
 
 | Endpoint | Command |
 |---|---|
@@ -179,8 +265,6 @@ The service answers:
 - **`202 Accepted`** at once, with the command queued.
 - **`400 Bad Request`** for a channel or level out of range, a value that isn't a number, or a run
   time of 0 or outside −32 768…32 767.
-- **`403 Forbidden`** for a client that isn't in `Bridge:AllowedClients` (see
-  [Configuration](#configuration)), whatever the path.
 
 **Moves:**
 
@@ -204,6 +288,33 @@ channel 3 halfway down over 10 seconds:
 curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 ```
 
+### Rain
+
+`GET /weather/rain` answers `200 OK` with one line of plain text, unless the location is invalid:
+
+- **A number:** the millimetres of rain at the configured coordinates in the heaviest of the
+  current 15 minutes and the next two, leaving out any without a value, with a decimal point
+  (`0`, `0.3`). Looking ahead makes up for the nowcast's lag of about 30 minutes, so the rain
+  shows before it arrives. Snow counts as rain: the nowcast gives all precipitation as
+  millimetres of water, so 1 mm is about 1 cm of fresh snow.
+- **`unknown`:** GeoSphere didn't answer within 15 seconds or answered with an error or something
+  unreadable, its latest nowcast run is older than an hour, or the run has no value for any of
+  the three steps.
+
+Without a valid location (the `Location` block left out, or a coordinate missing, empty, not a
+number or out of range), it answers `500 Internal Server Error` without a body, and the log names
+the problem; the CCU3's `curl -f` then writes `unknown`.
+
+Each request fetches these three steps of GeoSphere Austria's 1 km rain nowcast
+(`nowcast-v1-15min-1km`); nothing is cached. To try it on the Pi:
+
+```bash
+curl http://127.0.0.1:5080/weather/rain
+```
+
+The rain data comes from [GeoSphere Austria](https://data.hub.geosphere.at/), under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## Configuration
 
 The settings come from these sources, each overriding the ones before it:
@@ -221,27 +332,33 @@ The settings:
 | Setting | Value |
 |---|---|
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
-| `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list. |
+| `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list: the CCU's, and `127.0.0.1` for checks with `curl` on the Pi. |
+| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The coordinates for the nowcast endpoint, in decimal degrees. In the settings file, remove the `//` in front of the `Location` block to fill them in. Without both, the shutters still work, but the rain endpoint answers an error. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
 The service doesn't start if the remote ID is missing or too large, the allow-list is empty, or an
-entry isn't an IP address; the journal says which.
+entry isn't an IP address; the journal says which. An invalid location doesn't stop it: it logs
+an error at startup naming the problem.
 
 **Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
 profile uses the Development environment, listening on `http://localhost:5080`. Development only
 logs what it would send over the radio, uses a made-up remote ID and allows `127.0.0.1` and `::1`.
+Its made-up location is in Austria, so the rain endpoint fetches real nowcast data.
 
 ## Logging
 
 The service logs with [NLog](https://nlog-project.org/):
 
+- **Debug:** each rain amount answered.
 - **Information:** each command received, each timed Stop queued and each command sent.
-- **Warning:** refused and rejected requests.
-- **Error:** a command that failed to send, after which the service goes on with the next one, and
-  an unexpected error, which stops the service so that systemd restarts it (up to 5 times in 5
-  minutes).
+- **Warning:** refused and rejected requests, and each rain request without rain data, with the
+  reason. During a GeoSphere outage that's one entry every 15 minutes.
+- **Error:** an invalid location, once at startup; a command that failed to send, after which the
+  service goes on with the next one; and an unexpected error, which stops the service so that
+  systemd restarts it (up to 5 times in 5 minutes).
 
-ASP.NET Core's own entries below warning level are left out, to spare the SD card.
+ASP.NET Core's own entries below warning level are left out, and the request to GeoSphere isn't
+logged by .NET itself, to spare the SD card.
 
 **Defaults:**
 

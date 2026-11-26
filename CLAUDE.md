@@ -13,6 +13,8 @@ loaded.
 
 A .NET service on a Raspberry Pi 4 that sends 433 MHz remote control codes to radio-controlled
 shutters through a CC1101 transceiver, controlled over HTTP by a Homematic CCU3 (see README.md).
+It also reports the rain from GeoSphere Austria's nowcast, which the CCU3 polls to close the
+shutters.
 The repository is a public GitHub repository, `Sephiroth018/shutter-rf-bridge`.
 
 ## Environment
@@ -21,7 +23,7 @@ The repository is a public GitHub repository, `Sephiroth018/shutter-rf-bridge`.
   RDP or SSH. The service runs as a systemd service, independent of any desktop session.
 - **Logs persist on the SD card**, so the service logs only real events at info level, never in
   loops.
-- **House-specific values stay out of the repository:** the remote's ID, the Pi's address and the
+- **Local settings stay out of the repository:** the remote's ID, the Pi's address and the
   channel mapping live in local configuration on the Pi.
 - **The user isn't fond of terminal work:** instructions for the Pi are complete copy-paste
   command blocks. Hardware suggestions are plug-only: no soldering, cutting or modifying cases.

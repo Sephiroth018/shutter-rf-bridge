@@ -4,14 +4,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using ShutterRfBridge.Transmission;
+using ShutterRfBridge.Weather;
 
 namespace ShutterRfBridge.Tests.TestSupport;
 
 /// <summary>
 ///     The service in-process, in the Development environment with its dry-run transmitter, made-up remote ID and
 ///     localhost allow-list. The <see cref="TransmitWorker" /> is left out, so the received commands stay in the
-///     <see cref="TransmitQueue" /> for the test to take.
+///     <see cref="TransmitQueue" /> for the test to take. The nowcast's requests go to <see cref="NowcastHandler" />,
+///     never to GeoSphere.
 /// </summary>
 internal sealed class BridgeApplication : WebApplicationFactory<Program>
 {
@@ -19,6 +22,9 @@ internal sealed class BridgeApplication : WebApplicationFactory<Program>
     private readonly Dictionary<string, string?> _settings = [];
 
     public TransmitQueue Queue => Services.GetRequiredService<TransmitQueue>();
+
+    public SubstitutableHttpMessageHandler NowcastHandler { get; } =
+        Substitute.For<SubstitutableHttpMessageHandler>();
 
     /// <summary>Overrides a configuration value; call before the first request.</summary>
     public void SetSetting(string key, string? value)
@@ -33,19 +39,25 @@ internal sealed class BridgeApplication : WebApplicationFactory<Program>
     }
 
     /// <summary>Sends a <c>POST</c> without a body from <paramref name="client" /> and returns the status code.</summary>
-    public async Task<int> PostAsync(string path, IPAddress? client)
-    {
-        var context = await Server.SendAsync(request =>
-        {
-            request.Request.Method = HttpMethods.Post;
-            request.Request.Path = path;
-            request.Connection.RemoteIpAddress = client;
-        }, TestContext.Current.CancellationToken);
-        return context.Response.StatusCode;
-    }
+    public async Task<int> PostAsync(string path, IPAddress? client) =>
+        (await SendAsync(HttpMethods.Post, path, client)).StatusCode;
 
     /// <inheritdoc cref="PostAsync(string, IPAddress?)" />
     public Task<int> PostAsync(string path) => PostAsync(path, IPAddress.Loopback);
+
+    /// <summary>Sends a <c>GET</c> from localhost and returns the response.</summary>
+    public Task<HttpResponse> GetAsync(string path) => SendAsync(HttpMethods.Get, path, IPAddress.Loopback);
+
+    private async Task<HttpResponse> SendAsync(string method, string path, IPAddress? client)
+    {
+        var context = await Server.SendAsync(request =>
+        {
+            request.Request.Method = method;
+            request.Request.Path = path;
+            request.Connection.RemoteIpAddress = client;
+        }, TestContext.Current.CancellationToken);
+        return context.Response;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -53,6 +65,7 @@ internal sealed class BridgeApplication : WebApplicationFactory<Program>
         builder.ConfigureServices(services =>
         {
             services.Remove(services.Single(service => service.ImplementationType == typeof(TransmitWorker)));
+            services.AddHttpClient<NowcastClient>().ConfigurePrimaryHttpMessageHandler(() => NowcastHandler);
             foreach (var service in _replacedServices)
             {
                 services.Add(service);

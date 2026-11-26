@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using ShutterRfBridge.Configuration;
+using ShutterRfBridge.Weather;
 
 namespace ShutterRfBridge.Tests.Configuration;
 
@@ -78,6 +79,17 @@ public sealed class SettingsFileConfigurationTests : IDisposable
         configuration.AddSettingsFile(deployDirectory);
 
         Assert.Equal("http://0.0.0.0:5080", configuration["Urls"]);
+    }
+
+    [Fact]
+    public void AddSettingsFile_DeployTemplate_LeavesTheLocationOut()
+    {
+        var deployDirectory = Path.Combine(AppContext.BaseDirectory, "deploy");
+        using var configuration = CreateServiceConfiguration();
+
+        configuration.AddSettingsFile(deployDirectory);
+
+        Assert.False(configuration.GetSection(Location.SettingKey).Exists());
     }
 
     /// <summary>The configuration sources the service's own builder has, with the built-in files from the test's folder.</summary>

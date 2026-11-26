@@ -1,0 +1,50 @@
+using System.Diagnostics;
+using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
+using ShutterRfBridge.Weather;
+
+namespace ShutterRfBridge.Api;
+
+/// <summary>
+///     The endpoint the CCU3 polls for the rain, answering plain text: <c>200 OK</c> with the millimetres or
+///     <c>unknown</c>, or an empty <c>500</c> while the location is invalid.
+/// </summary>
+[ApiController]
+[Route("weather")]
+public class WeatherController : ControllerBase
+{
+    private readonly Location _location;
+    private readonly RainReportLog _log;
+    private readonly RainReporter _reporter;
+
+    public WeatherController(Location location, RainReporter reporter, RainReportLog log)
+    {
+        _location = location;
+        _reporter = reporter;
+        _log = log;
+    }
+
+    [HttpGet("rain")]
+    public async Task<ContentResult> Rain(CancellationToken cancellationToken) =>
+        _location switch
+        {
+            ValidLocation valid => await ReportRainAsync(valid.Coordinates, cancellationToken),
+            InvalidLocation invalid => ReportInvalidLocation(invalid.Problem),
+            _ => throw new UnreachableException()
+        };
+
+    private async Task<ContentResult> ReportRainAsync(Coordinates coordinates, CancellationToken cancellationToken)
+    {
+        var millimetres = await _reporter.ReportAsync(coordinates, cancellationToken);
+        // HM script's ToFloat reads a decimal point, whatever the Pi's culture, and no exponent such as 1E-05.
+        return Content(millimetres?.ToString("0.###", CultureInfo.InvariantCulture) ?? "unknown");
+    }
+
+    private ContentResult ReportInvalidLocation(string problem)
+    {
+        // Every request, unlike the one error at startup: the problem needs fixing.
+        _log.RecordInvalidLocation(LogLevel.Warning, problem);
+        // No body: the problem is for the log, not the client.
+        return new ContentResult { StatusCode = StatusCodes.Status500InternalServerError };
+    }
+}
