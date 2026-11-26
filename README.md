@@ -206,22 +206,17 @@ the CCU3 meanwhile. A program then turns the text into a number and a dry/rain s
    start by itself, start it once from a script:
    `dom.GetObject("CUxD.CUX2800001:1.TIMER_SET").State(":0:0/:15:0/:30:0/:45:0");`
 
-3. Create a program with the condition **Systemzustand `Regen_Pi`, bei Aktualisierung auslösen**,
-   with the text field left empty. It only triggers the program: with bei Änderung it doesn't
-   trigger reliably, and the WebUI's text comparison doesn't decide the branch reliably either.
-   So **Dann** and **Sonst** both get the same script, which sets the amount, and the state by a
-   threshold of your choice:
+3. Create a program with the condition **Systemzustand `Regen_Pi` nicht bei `unknown`, bei
+   Änderung auslösen**. **Dann** gets a script that sets the amount, and the state by a
+   threshold of your choice; **Sonst** sets `Regen` to unbekannt:
 
    ```
-   var raw = dom.GetObject("Regen_Pi").Value();
-   if (raw == "unknown") {
-     dom.GetObject("Regen").State(2);
-   } else {
-     var mm = raw.ToFloat();
-     dom.GetObject("Regen_mm").State(mm);
-     if (mm >= 0.1) { dom.GetObject("Regen").State(1); } else { dom.GetObject("Regen").State(0); }
-   }
+   var mm = dom.GetObject("Regen_Pi").Value().ToFloat();
+   dom.GetObject("Regen_mm").State(mm);
+   if (mm >= 0.1) { dom.GetObject("Regen").State(1); } else { dom.GetObject("Regen").State(0); }
    ```
+
+   The condition is written for OpenCCU's WebUI.
 
    To test it, run `dom.GetObject("Regen_Pi").State("unknown");` in Skript testen, then the same
    with `"0.5"` and `"0"`: `Regen` switches to unbekannt, Regen and trocken.
