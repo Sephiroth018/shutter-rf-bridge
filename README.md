@@ -2,8 +2,8 @@
 
 Controls radio-controlled external blinds and roller shutters over HTTP. A service on a Raspberry
 Pi 4 sends the shutters' 433 MHz remote control codes, which look like the Dooya protocol of many
-rebranded tubular motors, through a CC1101 transceiver and offers them as an HTTP API. It also reports how much rain falls at the configured coordinates, from GeoSphere
-Austria's rain nowcast.
+rebranded tubular motors, through a CC1101 transceiver and offers them as an HTTP API. It also
+reports how much rain falls at the configured coordinates, from GeoSphere Austria's rain nowcast.
 
 The service was written for an OpenCCU instance (the CCU below), whose CUxD devices call the API.
 Nothing in it needs OpenCCU, though: any HTTP client in its allow-list can use it.
