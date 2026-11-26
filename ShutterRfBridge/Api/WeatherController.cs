@@ -33,9 +33,9 @@ public class WeatherController : ControllerBase
             _ => throw new UnreachableException()
         };
 
-    private async Task<ContentResult> ReportRainAsync(Coordinates location, CancellationToken cancellationToken)
+    private async Task<ContentResult> ReportRainAsync(Coordinates coordinates, CancellationToken cancellationToken)
     {
-        var millimetres = await _reporter.ReportAsync(location, cancellationToken);
+        var millimetres = await _reporter.ReportAsync(coordinates, cancellationToken);
         // HM script's ToFloat reads a decimal point, whatever the Pi's culture, and no exponent such as 1E-05.
         return Content(millimetres?.ToString("0.###", CultureInfo.InvariantCulture) ?? "unknown");
     }

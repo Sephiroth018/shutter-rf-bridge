@@ -31,6 +31,7 @@ internal sealed record NowcastResponse(
                 $"The nowcast response has {amounts.Count} values for {Timestamps.Count} timestamps.");
         }
 
+        // A run starts at its reference time, never after now, so it always covers the first step asked for.
         if (Timestamps.Count > stepTimes.Count || !Timestamps.SequenceEqual(stepTimes.Take(Timestamps.Count)))
         {
             throw new JsonException(

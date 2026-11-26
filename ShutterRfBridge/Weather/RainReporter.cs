@@ -24,17 +24,17 @@ public class RainReporter
     }
 
     /// <summary>
-    ///     The millimetres of rain at <paramref name="location" /> in the heaviest of the next 15-minute steps, the current
-    ///     one included, or <see langword="null" /> when none of them has a value; the log gets the reason.
+    ///     The millimetres of rain at the <paramref name="coordinates" /> in the heaviest of the next 15-minute steps, the
+    ///     current one included, or <see langword="null" /> when none of them has a value; the log gets the reason.
     /// </summary>
-    public async Task<double?> ReportAsync(Coordinates location, CancellationToken cancellationToken)
+    public async Task<double?> ReportAsync(Coordinates coordinates, CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow();
         var stepTime = Nowcast.StepTimeAt(now);
         Nowcast nowcast;
         try
         {
-            nowcast = await _client.GetStepsAsync(location, stepTime, StepCount, cancellationToken);
+            nowcast = await _client.GetStepsAsync(coordinates, stepTime, StepCount, cancellationToken);
         }
         // An IOException (HttpIOException) comes from a response that breaks off while its body is read.
         catch (Exception exception) when (exception is HttpRequestException or IOException)

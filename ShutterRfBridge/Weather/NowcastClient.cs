@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace ShutterRfBridge.Weather;
 
-/// <summary>Fetches GeoSphere Austria's rain nowcast (dataset <c>nowcast-v1-15min-1km</c>) for one point and one step.</summary>
+/// <summary>
+///     Fetches GeoSphere Austria's rain nowcast (dataset <c>nowcast-v1-15min-1km</c>) for one point and consecutive
+///     steps.
+/// </summary>
 public class NowcastClient
 {
     private const string DatasetAddress =
@@ -39,7 +42,7 @@ public class NowcastClient
     /// <exception cref="TaskCanceledException">The request timed out or was cancelled.</exception>
     /// <exception cref="JsonException">The response isn't a nowcast for one point and those steps.</exception>
     public async Task<Nowcast> GetStepsAsync(
-        Coordinates location,
+        Coordinates coordinates,
         DateTimeOffset firstStepTime,
         int stepCount,
         CancellationToken cancellationToken)
@@ -49,7 +52,8 @@ public class NowcastClient
         var url = QueryHelpers.AddQueryString(DatasetAddress, new Dictionary<string, string?>
         {
             ["parameters"] = "rr",
-            ["lat_lon"] = string.Create(CultureInfo.InvariantCulture, $"{location.Latitude},{location.Longitude}"),
+            ["lat_lon"] =
+                string.Create(CultureInfo.InvariantCulture, $"{coordinates.Latitude},{coordinates.Longitude}"),
             ["start"] = Format(stepTimes[0]),
             ["end"] = Format(stepTimes[^1])
         });
