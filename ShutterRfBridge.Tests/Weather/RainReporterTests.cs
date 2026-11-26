@@ -156,7 +156,7 @@ public sealed class RainReporterTests : IDisposable
         var millimetres = await ReportAsync();
 
         Assert.Null(millimetres);
-        Assert.Equal("No rain data: timed out after 5 s", _logger.LatestRecord.Message);
+        Assert.Equal("No rain data: timed out after 15 s", _logger.LatestRecord.Message);
     }
 
     [Theory]

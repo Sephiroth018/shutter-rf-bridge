@@ -198,7 +198,7 @@ the CCU3 meanwhile. A program then turns the text into a number and a dry/rain s
    |---|---|
    | `TIMER_PRESET` | `:0:0/:15:0/:30:0/:45:0` |
    | `REPEAT` | ticked |
-   | `CMD_EXEC` | `extra/timer.tcl Regen_Pi ~22$(curl -sf -m 10 http://<pi>:5080/weather/rain \|\| echo unknown)~22` |
+   | `CMD_EXEC` | `extra/timer.tcl Regen_Pi ~22$(curl -sf -m 20 http://<pi>:5080/weather/rain \|\| echo unknown)~22` |
    | `EXEC_TIMEOUT` | `1` |
 
    `~22` is CUxD's spelling of `"` in these fields. `timer.tcl` writes the answer into `Regen_Pi`;
@@ -294,7 +294,7 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
   (`0`, `0.3`). Looking ahead makes up for the nowcast's lag of about 30 minutes, so the rain
   shows before it arrives. Snow counts as rain: the nowcast gives all precipitation as
   millimetres of water, so 1 mm is about 1 cm of fresh snow.
-- **`unknown`:** GeoSphere didn't answer within 5 seconds or answered with an error or something
+- **`unknown`:** GeoSphere didn't answer within 15 seconds or answered with an error or something
   unreadable, its latest nowcast run is older than an hour, or the run has no value for any of
   the three steps.
 

@@ -14,10 +14,10 @@ public class NowcastClient
         "https://dataset.api.hub.geosphere.at/v1/timeseries/forecast/nowcast-v1-15min-1km";
 
     /// <summary>
-    ///     How long the request may take: below the CCU3's <c>curl -m 10</c>, so the CCU3 gets <c>unknown</c> rather
-    ///     than nothing.
+    ///     How long the request may take: GeoSphere sometimes takes over 5 s, and staying below the CCU3's
+    ///     <c>curl -m 20</c> gets the CCU3 <c>unknown</c> rather than nothing.
     /// </summary>
-    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
+    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
