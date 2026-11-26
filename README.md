@@ -3,7 +3,7 @@
 Controls radio-controlled external blinds and roller shutters from a Homematic CCU3. A service on
 a Raspberry Pi 4 sends the shutters' 433 MHz remote control codes through a CC1101 transceiver
 and offers them as an HTTP API, which CUxD devices on the CCU3 call. As a bonus, it tells the CCU3
-how much rain falls at the house, from GeoSphere Austria's rain nowcast.
+how much rain falls at the configured coordinates, from GeoSphere Austria's rain nowcast.
 
 ## Requirements
 
@@ -49,10 +49,8 @@ built-in settings:
 sudo nano /etc/shutter-rf-bridge/appsettings.json
 ```
 
-Fill in `RemoteId` and the CCU's IP address as the first entry of `AllowedClients`. For the rain,
-remove the `//` in front of the `Location` block and fill in the house's `Latitude` and
-`Longitude`. The comments in the file explain each value, and [Configuration](#configuration) has
-the details. Once the service is installed, restart it after every change:
+Fill in the values as described in [Configuration](#configuration). Once the service is
+installed, restart it after every change:
 
 ```bash
 sudo systemctl restart shutter-rf-bridge
@@ -265,17 +263,17 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 
 `GET /weather/rain` answers `200 OK` with one line of plain text, unless the location is invalid:
 
-- **A number:** the millimetres of rain at the house in the heaviest 15 minutes among the current
-  ones and the next two, with a decimal point (`0`, `0.3`). Looking ahead makes up for the
+- **A number:** the millimetres of rain at the configured coordinates in the heaviest 15 minutes
+  among the current ones and the next two that have a value, with a decimal point (`0`, `0.3`). Looking ahead makes up for the
   nowcast's lag of about 30 minutes, so the rain shows before it arrives. Snow counts as rain: the
   nowcast gives all precipitation as millimetres of water, so 1 mm is about 1 cm of fresh snow.
 - **`unknown`:** GeoSphere didn't answer within 5 seconds or answered with an error or something
-  unreadable, its latest nowcast run is older than an hour, or the run has no value for the
-  current 15 minutes.
+  unreadable, its latest nowcast run is older than an hour, or the run has no value for any of
+  the three steps.
 
-Without a usable location (the `Location` block left out, or a coordinate missing, empty, not a
-number or out of range), it answers `500 Internal Server Error` with the problem as plain text,
-such as `Weather:Location missing`; the CCU3's `curl -f` then writes `unknown`.
+Without a valid location (the `Location` block left out, or a coordinate missing, empty, not a
+number or out of range), it answers `500 Internal Server Error` without a body, and the log names
+the problem; the CCU3's `curl -f` then writes `unknown`.
 
 Each request fetches these three steps of GeoSphere Austria's 1 km rain nowcast
 (`nowcast-v1-15min-1km`); nothing is cached. To try it on the Pi:
@@ -304,8 +302,8 @@ The settings:
 | Setting | Value |
 |---|---|
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
-| `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list. |
-| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The house's location in decimal degrees, for the rain. Without both, the shutters still work, but the rain endpoint answers an error. |
+| `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list: the CCU's, and `127.0.0.1` for checks with `curl` on the Pi. |
+| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The coordinates for the rain, in decimal degrees. In the settings file, remove the `//` in front of the `Location` block to fill them in. Without both, the shutters still work, but the rain endpoint answers an error. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
 The service doesn't start if the remote ID is missing or too large, the allow-list is empty, or an

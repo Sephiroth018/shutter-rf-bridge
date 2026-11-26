@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration.Json;
 
 namespace ShutterRfBridge.Configuration;
 
-/// <summary>The house's settings file on the Pi, in the folder that systemd's <c>ConfigurationDirectory=</c> creates.</summary>
+/// <summary>The local settings file on the Pi, in the folder that systemd's <c>ConfigurationDirectory=</c> creates.</summary>
 internal static class SettingsFileConfiguration
 {
     /// <summary>The environment variable in which systemd passes the folder.</summary>
