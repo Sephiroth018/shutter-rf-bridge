@@ -145,6 +145,17 @@ public sealed class NowcastClientTests : IDisposable
     }
 
     [Fact]
+    public async Task GetStepsAsync_NullPoint_ThrowsJsonException()
+    {
+        _handler.Respond(HttpStatusCode.OK, """
+                                            {"reference_time":"2026-11-23T18:15+00:00","timestamps":[],
+                                             "features":[null]}
+                                            """);
+
+        await Assert.ThrowsAsync<JsonException>(GetStepsAsync);
+    }
+
+    [Fact]
     public async Task GetStepsAsync_MoreValuesThanTimestamps_ThrowsJsonException()
     {
         _handler.Respond(HttpStatusCode.OK, """

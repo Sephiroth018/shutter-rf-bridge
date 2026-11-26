@@ -18,9 +18,10 @@ internal sealed record NowcastResponse(
     /// <exception cref="JsonException">The response isn't one point with the steps asked for.</exception>
     public Nowcast ToNowcast(IReadOnlyList<DateTimeOffset> stepTimes)
     {
-        if (Features is not [var feature])
+        // Not null: RespectNullableAnnotations doesn't reach a list's elements.
+        if (Features is not [{ } feature])
         {
-            throw new JsonException($"The nowcast response has {Features.Count} features instead of one.");
+            throw new JsonException($"The nowcast response has {Features.Count} features instead of one point.");
         }
 
         var amounts = feature.Properties.Parameters.Rr.Data;
