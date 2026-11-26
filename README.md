@@ -91,36 +91,8 @@ Run the deploy script again. Without new commits, it leaves the running service 
 ~/shutter-rf-bridge/deploy/deploy.sh
 ```
 
-After system updates, restart the service so it runs on the patched .NET:
-
-```bash
-sudo systemctl restart shutter-rf-bridge
-```
-
-The deploy script never changes the settings file, so settings added in a newer version have to be
-added by hand. For the rain, if the settings file has no `"Weather"` line yet, open it:
-
-```bash
-sudo nano /etc/shutter-rf-bridge/appsettings.json
-```
-
-Paste this block on its own line right after the `},` that closes the `"Bridge"` block, and fill in
-the coordinates as described in [Configuration](#configuration):
-
-```json
-  "Weather": {
-    "Location": {
-      "Latitude": "",
-      "Longitude": ""
-    }
-  },
-```
-
-Then restart the service:
-
-```bash
-sudo systemctl restart shutter-rf-bridge
-```
+The deploy script never changes the settings file, so settings a newer version adds have to be
+copied by hand from the template, `deploy/appsettings.json` (see [Settings](#settings)).
 
 ### Logs
 

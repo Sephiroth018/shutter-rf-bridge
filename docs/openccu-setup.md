@@ -70,8 +70,8 @@ program's script use the same ones:
 
 ### Timer
 
-Create one CUxD **(28) System** device with the function **Timer**. In its first channel's
-settings:
+Create one CUxD **(28) System** device with the function **Timer**. In the settings of one of its
+channels:
 
 | Field | Value |
 |---|---|
@@ -82,7 +82,7 @@ settings:
 
 If the service doesn't answer or answers an error, `curl` fails and `unknown` is written instead.
 If the timer doesn't start by itself, start it once from a script, with the timer device's serial
-number in place of `CUX2800001`:
+number and the channel's number in place of `CUX2800001:1`:
 
 ```
 dom.GetObject("CUxD.CUX2800001:1.TIMER_SET").State(":0:0/:15:0/:30:0/:45:0");
