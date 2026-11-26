@@ -1,8 +1,8 @@
 # shutter-rf-bridge
 
 Controls radio-controlled external blinds and roller shutters over HTTP. A service on a Raspberry
-Pi 4 sends the shutters' 433 MHz remote control codes through a CC1101 transceiver and offers them
-as an HTTP API. It also reports how much rain falls at the configured coordinates, from GeoSphere
+Pi 4 sends the shutters' 433 MHz remote control codes, which look like the Dooya protocol of many
+rebranded tubular motors, through a CC1101 transceiver and offers them as an HTTP API. It also reports how much rain falls at the configured coordinates, from GeoSphere
 Austria's rain nowcast.
 
 The service was written for an OpenCCU instance (the CCU below), whose CUxD devices call the API.
@@ -30,6 +30,11 @@ Nothing in it needs OpenCCU, though: any HTTP client in its allow-list can use i
 
 ## Requirements
 
+- **Shutters whose remote sends a Dooya-like signal:** 433.88 MHz, OOK, with a 40-bit frame of the
+  remote's 28-bit ID, a channel from 0 to 15, where 0 is the remote's channel for all shutters, and
+  the command. The code is fixed, the same on every press with no rolling code, which is why the
+  service can build the frames from the remote's ID. The protocol was identified by the shape of
+  one remote's signal, so other Dooya remotes may differ.
 - **A Raspberry Pi 4 with Raspberry Pi OS 64-bit (Debian Trixie)**, with the CC1101 on SPI0 CE0.
 - **SPI turned on.** If it isn't yet, this turns it on and restarts the Pi:
 
