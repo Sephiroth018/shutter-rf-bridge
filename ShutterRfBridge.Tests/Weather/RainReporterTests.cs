@@ -2,7 +2,6 @@ using System.Net;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using ShutterRfBridge.Tests.TestSupport;
 using ShutterRfBridge.Weather;
 
@@ -141,8 +140,7 @@ public sealed class RainReporterTests : IDisposable
     [Fact]
     public async Task ReportAsync_ResponseBrokeOff_ReturnsUnknownAndLogsTheFailure()
     {
-        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new HttpIOException(HttpRequestError.ResponseEnded));
+        _handler.Fail(new HttpIOException(HttpRequestError.ResponseEnded));
 
         var millimetres = await ReportAsync();
 
@@ -153,8 +151,7 @@ public sealed class RainReporterTests : IDisposable
     [Fact]
     public async Task ReportAsync_RequestTimedOut_ReturnsUnknownAndLogsTheTimeout()
     {
-        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new TaskCanceledException());
+        _handler.Fail(new TaskCanceledException());
 
         var millimetres = await ReportAsync();
 
@@ -183,8 +180,7 @@ public sealed class RainReporterTests : IDisposable
     {
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();
-        _handler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new TaskCanceledException());
+        _handler.Fail(new TaskCanceledException());
 
         await Assert.ThrowsAsync<TaskCanceledException>(() =>
             CreateReporter().ReportAsync(Coordinates, cancellation.Token));

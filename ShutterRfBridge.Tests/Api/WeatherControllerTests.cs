@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
-using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using ShutterRfBridge.Tests.TestSupport;
 using ShutterRfBridge.Weather;
 
@@ -69,8 +67,7 @@ public sealed class WeatherControllerTests : IAsyncDisposable
     [Fact]
     public async Task Rain_RequestTimedOut_ReturnsUnknown()
     {
-        _application.NowcastHandler.SendRequestAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new TaskCanceledException());
+        _application.NowcastHandler.Fail(new TaskCanceledException());
 
         var response = await _application.GetAsync("/weather/rain");
 
@@ -101,17 +98,14 @@ public sealed class WeatherControllerTests : IAsyncDisposable
     [Fact]
     public async Task Rain_InvalidLocation_LogsTheProblemAtStartupAndWithTheRequest()
     {
+        const string Message = "No rain data, invalid location: Weather:Location:Latitude 91 out of range";
         var logger = new FakeLogger<RainReportLog>();
         _application.ReplaceService(new RainReportLog(logger));
         _application.SetSetting("Weather:Location:Latitude", "91");
 
         await _application.GetAsync("/weather/rain");
 
-        Assert.Equal(
-            [
-                (LogLevel.Error, "No rain data, invalid location: Weather:Location:Latitude 91 out of range"),
-                (LogLevel.Warning, "No rain data, invalid location: Weather:Location:Latitude 91 out of range")
-            ],
+        Assert.Equal([(LogLevel.Error, Message), (LogLevel.Warning, Message)],
             logger.Collector.GetSnapshot().Select(record => (record.Level, record.Message)));
     }
 

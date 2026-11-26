@@ -129,6 +129,7 @@ public sealed class NowcastClientTests : IDisposable
     [InlineData("{")]
     [InlineData("null")]
     [InlineData("""{"timestamps":[],"features":[]}""")]
+    [InlineData("""{"reference_time":"2026-11-23T18:15+00:00","timestamps":[],"features":[null]}""")]
     public async Task GetStepsAsync_NotANowcast_ThrowsJsonException(string json)
     {
         _handler.Respond(HttpStatusCode.OK, json);
@@ -140,17 +141,6 @@ public sealed class NowcastClientTests : IDisposable
     public async Task GetStepsAsync_TwoPoints_ThrowsJsonException()
     {
         _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder().WithFeatureCount(2).Build());
-
-        await Assert.ThrowsAsync<JsonException>(GetStepsAsync);
-    }
-
-    [Fact]
-    public async Task GetStepsAsync_NullPoint_ThrowsJsonException()
-    {
-        _handler.Respond(HttpStatusCode.OK, """
-                                            {"reference_time":"2026-11-23T18:15+00:00","timestamps":[],
-                                             "features":[null]}
-                                            """);
 
         await Assert.ThrowsAsync<JsonException>(GetStepsAsync);
     }
