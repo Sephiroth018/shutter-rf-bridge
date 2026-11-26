@@ -7,7 +7,7 @@ namespace ShutterRfBridge.Api;
 
 /// <summary>
 ///     The endpoint the CCU3 polls for the rain, answering plain text: <c>200 OK</c> with the millimetres or
-///     <c>unknown</c>, or <c>500</c> with the problem while the location is invalid.
+///     <c>unknown</c>, or an empty <c>500</c> while the location is invalid.
 /// </summary>
 [ApiController]
 [Route("weather")]
@@ -44,8 +44,7 @@ public class WeatherController : ControllerBase
     {
         // Every request, unlike the one error at startup: the problem needs fixing.
         _log.RecordInvalidLocation(LogLevel.Warning, problem);
-        var answer = Content(problem);
-        answer.StatusCode = StatusCodes.Status500InternalServerError;
-        return answer;
+        // No body: the problem is for the log, not the client.
+        return new ContentResult { StatusCode = StatusCodes.Status500InternalServerError };
     }
 }
