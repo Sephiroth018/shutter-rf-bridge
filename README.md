@@ -267,7 +267,8 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 
 - **A number:** the millimetres of rain at the house in the heaviest 15 minutes among the current
   ones and the next two, with a decimal point (`0`, `0.3`). Looking ahead makes up for the
-  nowcast's lag of about 30 minutes, so the rain shows before it arrives.
+  nowcast's lag of about 30 minutes, so the rain shows before it arrives. Snow counts as rain: the
+  nowcast gives all precipitation as millimetres of water, so 1 mm is about 1 cm of fresh snow.
 - **`unknown`:** GeoSphere didn't answer within 5 seconds or answered with an error or something
   unreadable, its latest nowcast run is older than an hour, or the run has no value for the
   current 15 minutes.
