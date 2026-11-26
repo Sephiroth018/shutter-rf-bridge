@@ -303,7 +303,7 @@ The settings:
 |---|---|
 | `Bridge:RemoteId` | The remote's ID, as a decimal number or `0x…` hex, in quotes; at most 28 bits. |
 | `Bridge:AllowedClients` | The IP addresses allowed to send commands, as a list: the CCU's, and `127.0.0.1` for checks with `curl` on the Pi. |
-| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The coordinates for the rain, in decimal degrees. In the settings file, remove the `//` in front of the `Location` block to fill them in. Without both, the shutters still work, but the rain endpoint answers an error. |
+| `Weather:Location:Latitude`, `Weather:Location:Longitude` | The coordinates for the nowcast endpoint, in decimal degrees. In the settings file, remove the `//` in front of the `Location` block to fill them in. Without both, the shutters still work, but the rain endpoint answers an error. |
 | `Urls` | The address and port the service listens on: `http://0.0.0.0:5080` in the settings file. |
 
 The service doesn't start if the remote ID is missing or too large, the allow-list is empty, or an
