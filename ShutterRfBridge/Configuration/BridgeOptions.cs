@@ -2,7 +2,7 @@ using System.Net;
 
 namespace ShutterRfBridge.Configuration;
 
-/// <summary>The house-specific settings, from the <see cref="SectionName" /> configuration section.</summary>
+/// <summary>The local settings for the shutters, from the <see cref="SectionName" /> configuration section.</summary>
 internal sealed class BridgeOptions
 {
     public const string SectionName = "Bridge";

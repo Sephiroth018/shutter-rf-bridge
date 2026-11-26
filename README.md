@@ -42,7 +42,7 @@ the script again, which builds and starts the service:
 
 ### Settings
 
-The house values live in `/etc/shutter-rf-bridge/appsettings.json`, which overrides the service's
+The local settings live in `/etc/shutter-rf-bridge/appsettings.json`, which overrides the service's
 built-in settings:
 
 ```bash
@@ -97,7 +97,7 @@ its system user, and is safe to run again:
 ```
 
 The settings are kept, so running the deploy script again reinstalls the service as it was. To
-remove them as well, note the house values first, if you still need them:
+remove them as well, note the local settings first, if you still need them:
 
 ```bash
 sudo cat /etc/shutter-rf-bridge/appsettings.json

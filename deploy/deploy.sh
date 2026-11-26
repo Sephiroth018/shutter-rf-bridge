@@ -34,7 +34,7 @@ fi
 if [[ ! -e $settings_file ]]; then
   # Creates the folder too, since systemd creates the unit's ConfigurationDirectory= only when the service starts.
   sudo install -D --mode=640 --owner=root --group="$service" "$repository/deploy/appsettings.json" "$settings_file"
-  echo "Created $settings_file. Fill in the house values, then run this script again."
+  echo "Created $settings_file. Fill in the local settings, then run this script again."
   exit 0
 fi
 # Set on every run: uninstall.sh keeps the file but removes the group, which a reinstall creates anew.
