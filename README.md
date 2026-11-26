@@ -1,9 +1,32 @@
 # shutter-rf-bridge
 
-Controls radio-controlled external blinds and roller shutters from a Homematic CCU3. A service on
-a Raspberry Pi 4 sends the shutters' 433 MHz remote control codes through a CC1101 transceiver
-and offers them as an HTTP API, which CUxD devices on the CCU3 call. As a bonus, it tells the CCU3
-how much rain falls at the configured coordinates, from GeoSphere Austria's rain nowcast.
+Controls radio-controlled external blinds and roller shutters over HTTP. A service on a Raspberry
+Pi 4 sends the shutters' 433 MHz remote control codes through a CC1101 transceiver and offers them
+as an HTTP API. It also reports how much rain falls at the configured coordinates, from GeoSphere
+Austria's rain nowcast.
+
+The service was written for an OpenCCU instance (the CCU below), whose CUxD devices call the API.
+Nothing in it needs OpenCCU, though: any HTTP client in its allow-list can use it.
+
+## Contents
+
+- [Requirements](#requirements)
+- [Install on the Raspberry Pi](#install-on-the-raspberry-pi)
+  - [First install](#first-install)
+  - [Settings](#settings)
+  - [Update](#update)
+  - [Logs](#logs)
+  - [Uninstall](#uninstall)
+- [Set up the CCU](#set-up-the-ccu)
+- [Known limitations](#known-limitations)
+- [HTTP API](#http-api)
+  - [Shutters](#shutters)
+  - [Rain](#rain)
+- [Configuration](#configuration)
+- [Logging](#logging)
+- [Development](#development)
+- [AI disclaimer](#ai-disclaimer)
+- [License](#license)
 
 ## Requirements
 
@@ -14,8 +37,8 @@ how much rain falls at the configured coordinates, from GeoSphere Austria's rain
   sudo raspi-config nonint do_spi 0 && sudo reboot
   ```
 
-- **The .NET 10 SDK**, at least the version in `global.json`, **and git**. On the Pi, they come
-  from Microsoft's package repository, so the system's updates keep .NET patched:
+- **The .NET 10 SDK**, at least the version in `global.json`, **and git**, here from Microsoft's
+  package repository:
 
   ```bash
   wget -q https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb && sudo dpkg -i /tmp/packages-microsoft-prod.deb && rm /tmp/packages-microsoft-prod.deb && sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0 git
@@ -23,7 +46,7 @@ how much rain falls at the configured coordinates, from GeoSphere Austria's rain
 
 ## Install on the Raspberry Pi
 
-The service runs as the systemd service `shutter-rf-bridge`. Run each block as a whole.
+The service runs as the systemd service `shutter-rf-bridge`.
 
 ### First install
 
@@ -42,8 +65,7 @@ the script again, which builds and starts the service:
 
 ### Settings
 
-The local settings live in `/etc/shutter-rf-bridge/appsettings.json`, which overrides the service's
-built-in settings:
+The local settings live in `/etc/shutter-rf-bridge/appsettings.json`:
 
 ```bash
 sudo nano /etc/shutter-rf-bridge/appsettings.json
@@ -58,10 +80,19 @@ sudo systemctl restart shutter-rf-bridge
 
 ### Update
 
-To update, run the deploy script again, while no shutter is moving: a restart drops pending timed
-Stops, so a shutter in a partial move would run to its end. Without new commits, it leaves the
-running service alone. After system updates, restart the
-service so it runs on the patched .NET.
+Run the deploy script again, while no shutter is moving: a restart drops pending timed Stops, so a
+shutter in a partial move would run to its end. Without new commits, the script leaves the running
+service alone:
+
+```bash
+~/shutter-rf-bridge/deploy/deploy.sh
+```
+
+After system updates, restart the service so it runs on the patched .NET:
+
+```bash
+sudo systemctl restart shutter-rf-bridge
+```
 
 The deploy script never changes the settings file, so settings added in a newer version have to be
 added by hand. For the rain, if the settings file has no `"Weather"` line yet, open it:
@@ -70,9 +101,8 @@ added by hand. For the rain, if the settings file has no `"Weather"` line yet, o
 sudo nano /etc/shutter-rf-bridge/appsettings.json
 ```
 
-Paste this block on its own line right after the `},` that closes the `"Bridge"` block, fill in
-the coordinates as described in [Configuration](#configuration), save with Ctrl+O and Enter, and
-exit with Ctrl+X:
+Paste this block on its own line right after the `},` that closes the `"Bridge"` block, and fill in
+the coordinates as described in [Configuration](#configuration):
 
 ```json
   "Weather": {
@@ -91,12 +121,10 @@ sudo systemctl restart shutter-rf-bridge
 
 ### Logs
 
-The service's log (commands received and sent, errors) goes to two places (see
-[Logging](#logging)):
+The service's log goes to two places (see [Logging](#logging)):
 
-- **systemd's journal**, next to the service's starts, stops and crashes, including a missing or
-  wrong setting at startup. Raspberry Pi OS keeps the journal in memory, so it starts empty after a
-  reboot. To watch it live:
+- **systemd's journal**, which also has the service's starts, stops and crashes, and starts empty
+  after a reboot. To watch it live:
 
   ```bash
   journalctl -u shutter-rf-bridge -f
@@ -108,20 +136,20 @@ The service's log (commands received and sent, errors) goes to two places (see
   journalctl -u shutter-rf-bridge -p err
   ```
 
-- **`/var/log/shutter-rf-bridge`**, the history that survives a reboot, written in batches.
+- **`/var/log/shutter-rf-bridge`**, the history that survives a reboot.
 
 ### Uninstall
 
-Uninstall while no shutter is moving, since stopping the service drops pending timed Stops (see
-[Update](#update)). The uninstall script stops the service and removes it, its program, its logs and
-its system user, and is safe to run again:
+Uninstall while no shutter is moving, since stopping the service drops pending timed Stops. The
+uninstall script stops the service and removes it, its program, its logs and its system user, and
+is safe to run again:
 
 ```bash
 ~/shutter-rf-bridge/deploy/uninstall.sh
 ```
 
 The settings are kept, so running the deploy script again reinstalls the service as it was. To
-remove them as well, note the local settings first, if you still need them:
+remove them as well, note the local settings first, if they are still needed:
 
 ```bash
 sudo cat /etc/shutter-rf-bridge/appsettings.json
@@ -140,17 +168,15 @@ The clone with the scripts stays. Remove it last; a later install then starts ag
 rm -rf ~/shutter-rf-bridge
 ```
 
-The service's entries in systemd's journal remain until the journal rotates them out. The .NET SDK,
-Microsoft's package repository and SPI are left as they are, since other software may use them.
+The .NET SDK, Microsoft's package repository and SPI are left as they are, since other software may
+use them.
 
-## Set up the CCU3
+## Set up the CCU
 
-The CCU3 calls the service through CUxD: a device whose channels send the shutters' commands, and
-a timer and a program that bring in the rain. [Set up the CCU3](docs/openccu-setup.md) describes
-both. The CCU3's IP address must be in the service's allow-list (see [Settings](#settings)); the
-service rejects calls from any other address.
+The CCU calls the service through CUxD: a device whose channels send the shutters' commands, and a
+timer and a program that bring in the rain. [Set up OpenCCU](docs/openccu-setup.md) describes both.
 
-### Known limitations
+## Known limitations
 
 - **The radio is one-way.** After the physical remote has been used, the CCU's position estimate is
   wrong until the next full Up or Down.
@@ -197,11 +223,11 @@ The service answers:
   itself.
 - **Run times are 16-bit numbers:** CUxD sends `$RUNTIME$` as a signed 16-bit number, so run times
   above 32 767 ms arrive negative. The service reads negative values as unsigned, which allows run
-  times up to 65 535 ms. Sent by hand, such a run time is negative too: 35 000 ms is `-30536`.
+  times up to 65 535 ms: 35 000 ms is sent as `-30536`.
 
 **Queue:** the radio sends one command at a time, about 0.35 s each. A Stop, and a move for a
-shutter that is still moving, go ahead of the other queued moves. Any new command for a shutter cancels its
-pending timed Stop, and a Stop also removes the shutter's queued commands.
+shutter that is still moving, go ahead of the other queued moves. Any new command for a shutter
+cancels its pending timed Stop, and a Stop also removes the shutter's queued commands.
 
 To try it on the Pi itself, which the settings file allows by default, this moves the shutter on
 channel 3 halfway down over 10 seconds:
@@ -216,16 +242,15 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 
 - **A number:** the millimetres of rain at the configured coordinates in the heaviest of the
   current 15 minutes and the next two, leaving out any without a value, with a decimal point
-  (`0`, `0.3`). Looking ahead makes up for the nowcast's lag of about 30 minutes, so the rain
-  shows before it arrives. Snow counts as rain: the nowcast gives all precipitation as
-  millimetres of water, so 1 mm is about 1 cm of fresh snow.
+  (`0`, `0.3`). Snow counts as rain: the nowcast gives all precipitation as millimetres of water,
+  so 1 mm is about 1 cm of fresh snow.
 - **`unknown`:** GeoSphere didn't answer within 15 seconds or answered with an error or something
   unreadable, its latest nowcast run is older than an hour, or the run has no value for any of
   the three steps.
 
 Without a valid location (the `Location` block left out, or a coordinate missing, empty, not a
 number or out of range), it answers `500 Internal Server Error` without a body, and the log names
-the problem; the CCU3's `curl -f` then writes `unknown`.
+the problem.
 
 Each request fetches these three steps of GeoSphere Austria's 1 km rain nowcast
 (`nowcast-v1-15min-1km`); nothing is cached. To try it on the Pi:
@@ -243,11 +268,9 @@ The settings come from these sources, each overriding the ones before it:
 
 1. **`appsettings.json`** next to the program: the built-in defaults, such as logging. A deploy
    replaces it, so it isn't the place for changes.
-2. **`appsettings.Development.json`**, in the Development environment only.
-3. **`/etc/shutter-rf-bridge/appsettings.json`**, the settings file on the Pi (see
+2. **`/etc/shutter-rf-bridge/appsettings.json`**, the settings file on the Pi (see
    [Settings](#settings)), read only when the service runs under systemd.
-4. **Environment variables**, with `__` for each `:` in a setting's name
-   (`Bridge__RemoteId`).
+3. **Environment variables.**
 
 The settings:
 
@@ -261,11 +284,6 @@ The settings:
 The service doesn't start if the remote ID is missing or too large, the allow-list is empty, or an
 entry isn't an IP address; the journal says which. An invalid location doesn't stop it: it logs
 an error at startup naming the problem.
-
-**Development:** run without hardware, with `dotnet run --project ShutterRfBridge`. Its launch
-profile uses the Development environment, listening on `http://localhost:5080`. Development only
-logs what it would send over the radio, uses a made-up remote ID and allows `127.0.0.1` and `::1`.
-Its made-up location is in Austria, so the rain endpoint fetches real nowcast data.
 
 ## Logging
 
@@ -302,7 +320,9 @@ the settings file on the Pi, as described in NLog's
 the rest of the file system. Logging to another folder needs a `ReadWritePaths=` entry for it in a
 drop-in (`sudo systemctl edit shutter-rf-bridge`).
 
-## Build
+## Development
+
+Build and test:
 
 ```powershell
 dotnet tool restore
@@ -310,8 +330,19 @@ dotnet build ShutterRfBridge.slnx
 dotnet test --solution ShutterRfBridge.slnx
 ```
 
+Run without hardware:
+
+```powershell
+dotnet run --project ShutterRfBridge
+```
+
+Its launch profile uses the Development environment, which adds `appsettings.Development.json` to
+the settings and listens on `http://localhost:5080`. Development only logs what it would send over
+the radio, uses a made-up remote ID and allows `127.0.0.1` and `::1`. Its made-up location is in
+Austria, so the rain endpoint fetches real nowcast data.
+
 Before pushing, format and inspect the code as CI does (`jb cleanupcode` must leave no changes, and
-`jb inspectcode` must report nothing). Both skip your personal ReSharper settings, as CI's runs do:
+`jb inspectcode` must report nothing). Both skip personal ReSharper settings, as CI's runs do:
 
 ```powershell
 dotnet jb cleanupcode ShutterRfBridge.slnx --disable-settings-layers="GlobalAll;GlobalPerProduct;SolutionPersonal;ProjectPersonal"
