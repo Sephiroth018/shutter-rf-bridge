@@ -146,7 +146,7 @@ Microsoft's package repository and SPI are left as they are, since other softwar
 ## Set up the CCU3
 
 The CCU3 calls the service through CUxD: a device whose channels send the shutters' commands, and
-a timer and a program that bring in the rain. [Set up the CCU3](docs/ccu3-setup.md) describes
+a timer and a program that bring in the rain. [Set up the CCU3](docs/openccu-setup.md) describes
 both. The CCU3's IP address must be in the service's allow-list (see [Settings](#settings)); the
 service rejects calls from any other address.
 
@@ -156,7 +156,7 @@ service rejects calls from any other address.
   wrong until the next full Up or Down.
 - **The CCU can't stop a shutter it doesn't think is moving**, such as one started with the
   physical remote. Use the remote instead.
-- **Run times are at most 65 seconds** (see [Channels](docs/ccu3-setup.md#channels)).
+- **Run times are at most 65 seconds** (see [Channels](docs/openccu-setup.md#channels)).
 - **A restart of the service drops pending timed Stops** (see [Update](#update)).
 - **The rain is radar-based:** it misses light drizzle and very local showers, and lags by about
   30 minutes. Reporting the next 45 minutes makes up for the lag, but means shutters also close
