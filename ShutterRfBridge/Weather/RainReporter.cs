@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace ShutterRfBridge.Weather;
 
-/// <summary>Reports the rain at the house, now and shortly ahead, fetching the nowcast for every report.</summary>
+/// <summary>Reports the rain at the configured coordinates, now and shortly ahead, fetching the nowcast for every report.</summary>
 public class RainReporter
 {
     // The current step and the next two: the nowcast lags about 30 minutes, and shutters closing early cost less than
@@ -25,7 +25,7 @@ public class RainReporter
 
     /// <summary>
     ///     The millimetres of rain at <paramref name="location" /> in the heaviest of the next 15-minute steps, the current
-    ///     one included, or <see langword="null" /> when the current step's are unknown; the log gets the reason.
+    ///     one included, or <see langword="null" /> when none of them has a value; the log gets the reason.
     /// </summary>
     public async Task<double?> ReportAsync(Coordinates location, CancellationToken cancellationToken)
     {
@@ -54,13 +54,14 @@ public class RainReporter
             return ReportUnknown($"stale run from {nowcast.ReferenceTime:u}");
         }
 
-        if (nowcast.Millimetres is not [not null, ..])
+        // Steps without a value are left out.
+        var amounts = nowcast.Millimetres.OfType<double>().ToList();
+        if (amounts.Count == 0)
         {
-            return ReportUnknown($"no value for {stepTime:u}");
+            return ReportUnknown($"no values from {stepTime:u}");
         }
 
-        // Later steps without a value are left out.
-        var heaviest = nowcast.Millimetres.OfType<double>().Max();
+        var heaviest = amounts.Max();
         _log.RecordAmount(heaviest);
         return heaviest;
     }

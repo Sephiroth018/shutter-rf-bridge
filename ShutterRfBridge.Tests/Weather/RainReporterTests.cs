@@ -69,7 +69,7 @@ public sealed class RainReporterTests : IDisposable
     }
 
     [Fact]
-    public async Task ReportAsync_CurrentStepWithoutValue_ReturnsUnknownDespiteLaterRain()
+    public async Task ReportAsync_CurrentStepWithoutValue_ReturnsTheLaterRain()
     {
         _handler.Respond(HttpStatusCode.OK, new NowcastResponseBuilder()
             .WithStep(StepTime, null)
@@ -78,7 +78,7 @@ public sealed class RainReporterTests : IDisposable
 
         var millimetres = await ReportAsync();
 
-        Assert.Null(millimetres);
+        Assert.Equal(0.3, millimetres);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class RainReporterTests : IDisposable
         var millimetres = await ReportAsync();
 
         Assert.Null(millimetres);
-        Assert.Equal("No rain data: no value for 2026-11-23 18:30:00Z",
+        Assert.Equal("No rain data: no values from 2026-11-23 18:30:00Z",
             _logger.LatestRecord.Message);
     }
 
@@ -128,7 +128,7 @@ public sealed class RainReporterTests : IDisposable
         var millimetres = await ReportAsync();
 
         Assert.Null(millimetres);
-        Assert.Equal("No rain data: no value for 2026-11-23 18:30:00Z",
+        Assert.Equal("No rain data: no values from 2026-11-23 18:30:00Z",
             _logger.LatestRecord.Message);
     }
 
