@@ -206,24 +206,28 @@ the CCU3 meanwhile. A program then turns the text into a number and a dry/rain s
    start by itself, start it once from a script:
    `dom.GetObject("CUxD.CUX2800001:1.TIMER_SET").State(":0:0/:15:0/:30:0/:45:0");`
 
-3. Create a program with the condition **Systemzustand `Regen_Pi` gleich `unknown`, bei Änderung
-   auslösen**:
-   - **Dann:** a script that sets the state to unknown:
+3. Create a program with the condition **Systemzustand `Regen_Pi`, bei Aktualisierung auslösen**,
+   with the text field left empty. It only triggers the program: with bei Änderung it doesn't
+   trigger reliably, and the WebUI's text comparison doesn't decide the branch reliably either.
+   So **Dann** and **Sonst** both get the same script, which sets the amount, and the state by a
+   threshold of your choice:
 
-     ```
+   ```
+   var raw = dom.GetObject("Regen_Pi").Value();
+   if (raw == "unknown") {
      dom.GetObject("Regen").State(2);
-     ```
-
-   - **Sonst:** a script that sets the amount, and the state by a threshold of your choice:
-
-     ```
-     var mm = dom.GetObject("Regen_Pi").Value().ToFloat();
+   } else {
+     var mm = raw.ToFloat();
      dom.GetObject("Regen_mm").State(mm);
      if (mm >= 0.1) { dom.GetObject("Regen").State(1); } else { dom.GetObject("Regen").State(0); }
-     ```
+   }
+   ```
 
-Other programs react to `Regen`, which changes only when the state does, or compare `Regen_mm` with
-their own threshold, checking first that `Regen` isn't unknown.
+   To test it, run `dom.GetObject("Regen_Pi").State("unknown");` in Skript testen, then the same
+   with `"0.5"` and `"0"`: `Regen` switches to unbekannt, Regen and trocken.
+
+Other programs react to `Regen` with bei Änderung auslösen, so they run only when the state
+changes, or compare `Regen_mm` with their own threshold, checking first that `Regen` isn't unknown.
 
 ### Known limitations
 
