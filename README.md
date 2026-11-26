@@ -85,9 +85,7 @@ sudo systemctl restart shutter-rf-bridge
 
 ### Update
 
-Run the deploy script again, while no shutter is moving: a restart drops pending timed Stops, so a
-shutter in a partial move would run to its end. Without new commits, the script leaves the running
-service alone:
+Run the deploy script again. Without new commits, it leaves the running service alone:
 
 ```bash
 ~/shutter-rf-bridge/deploy/deploy.sh
@@ -145,9 +143,8 @@ The service's log goes to two places (see [Logging](#logging)):
 
 ### Uninstall
 
-Uninstall while no shutter is moving, since stopping the service drops pending timed Stops. The
-uninstall script stops the service and removes it, its program, its logs and its system user, and
-is safe to run again:
+The uninstall script stops the service and removes it, its program, its logs and its system user,
+and is safe to run again:
 
 ```bash
 ~/shutter-rf-bridge/deploy/uninstall.sh
@@ -188,7 +185,8 @@ timer and a program that bring in the rain. [Set up OpenCCU](docs/openccu-setup.
 - **The CCU can't stop a shutter it doesn't think is moving**, such as one started with the
   physical remote. Use the remote instead.
 - **Run times are at most 65 seconds** (see [Channels](docs/openccu-setup.md#channels)).
-- **A restart of the service drops pending timed Stops** (see [Update](#update)).
+- **A restart of the service drops pending timed Stops**, so a shutter in a partial move runs to
+  its end.
 - **The rain is radar-based:** it misses light drizzle and very local showers, and lags by about
   30 minutes. Reporting the next 45 minutes makes up for the lag, but means shutters also close
   for a shower that passes by. That's enough for "keep closed while it rains", not for protecting
