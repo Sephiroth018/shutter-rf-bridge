@@ -63,6 +63,31 @@ Stops, so a shutter in a partial move would run to its end. Without new commits,
 running service alone. After system updates, restart the
 service so it runs on the patched .NET.
 
+The deploy script never changes the settings file, so settings added in a newer version have to be
+added by hand. For the rain, open the settings file:
+
+```bash
+sudo nano /etc/shutter-rf-bridge/appsettings.json
+```
+
+Paste this block on its own line right before the `"Urls"` line, fill in the coordinates as
+described in [Configuration](#configuration), save with Ctrl+O and Enter, and exit with Ctrl+X:
+
+```json
+  "Weather": {
+    "Location": {
+      "Latitude": "",
+      "Longitude": ""
+    }
+  },
+```
+
+Then restart the service:
+
+```bash
+sudo systemctl restart shutter-rf-bridge
+```
+
 ### Logs
 
 The service's log (commands received and sent, errors) goes to two places (see
@@ -263,9 +288,10 @@ curl -i -X POST http://127.0.0.1:5080/shutters/3/down/500/10000
 
 `GET /weather/rain` answers `200 OK` with one line of plain text, unless the location is invalid:
 
-- **A number:** the millimetres of rain at the configured coordinates in the heaviest 15 minutes
-  among the current ones and the next two that have a value, with a decimal point (`0`, `0.3`). Looking ahead makes up for the
-  nowcast's lag of about 30 minutes, so the rain shows before it arrives. Snow counts as rain: the
+- **A number:** the millimetres of rain at the configured coordinates in the heaviest of the
+  current 15 minutes and the next two, leaving out any without a value, with a decimal point
+  (`0`, `0.3`). Looking ahead makes up for the nowcast's lag of about 30 minutes, so the rain
+  shows before it arrives. Snow counts as rain: the
   nowcast gives all precipitation as millimetres of water, so 1 mm is about 1 cm of fresh snow.
 - **`unknown`:** GeoSphere didn't answer within 5 seconds or answered with an error or something
   unreadable, its latest nowcast run is older than an hour, or the run has no value for any of
