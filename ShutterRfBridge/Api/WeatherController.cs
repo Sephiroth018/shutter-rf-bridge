@@ -36,8 +36,8 @@ public class WeatherController : ControllerBase
     private async Task<ContentResult> ReportRainAsync(Coordinates location, CancellationToken cancellationToken)
     {
         var millimetres = await _reporter.ReportAsync(location, cancellationToken);
-        // HM script's ToFloat reads a decimal point, whatever the Pi's culture.
-        return Content(millimetres?.ToString(CultureInfo.InvariantCulture) ?? "unknown");
+        // HM script's ToFloat reads a decimal point, whatever the Pi's culture, and no exponent such as 1E-05.
+        return Content(millimetres?.ToString("0.###", CultureInfo.InvariantCulture) ?? "unknown");
     }
 
     private ContentResult ReportInvalidLocation(string problem)

@@ -37,6 +37,21 @@ public sealed class WeatherControllerTests : IAsyncDisposable
         Assert.Equal("0.3", await ReadBody(response));
     }
 
+    [Theory]
+    [InlineData(0, "0")]
+    [InlineData(12.5, "12.5")]
+    [InlineData(0.00001, "0")]
+    [InlineData(1.23456, "1.235")]
+    public async Task Rain_AnyAmount_ReturnsItWithoutExponent(double millimetres, string text)
+    {
+        _application.NowcastHandler.Respond(HttpStatusCode.OK,
+            new NowcastResponseBuilder().WithStep(StepTime, millimetres).Build());
+
+        var response = await _application.GetAsync("/weather/rain");
+
+        Assert.Equal(text, await ReadBody(response));
+    }
+
     [Fact]
     public async Task Rain_UnsuccessfulStatus_ReturnsUnknown()
     {
